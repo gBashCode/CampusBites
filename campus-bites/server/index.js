@@ -10,16 +10,22 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet({
-    crossOriginResourcePolicy: false // Allow cross-origin requests
+    crossOriginResourcePolicy: false
 }));
+
+// CORS configuration - FIXED: Restrict to specific domains
 app.use(cors({
     origin: function(origin, callback) {
-        // Allow all origins if FRONTEND_URL not set (development/migration period)
-        const allowedOrigin = process.env.FRONTEND_URL;
-        if (!allowedOrigin || !origin || origin === allowedOrigin) {
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'http://localhost:3000',
+            'http://localhost:5173' // Vite default
+        ].filter(Boolean);
+
+        if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(null, true); // Temporarily allow all to avoid breaking changes
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -47,18 +53,6 @@ if (!mongoURI.startsWith('mongodb://') && !mongoURI.startsWith('mongodb+srv://')
 }
 
 console.log('Attempting to connect to MongoDB...');
-// Safely log the URI structure to debug parsing issues
-try {
-    const uriParts = mongoURI.split('@');
-    if (uriParts.length > 1) {
-        console.log('MongoDB URI Host:', uriParts[1].split('/')[0]); // Log just the host part
-        console.log('MongoDB User:', uriParts[0].split('//')[1].split(':')[0]); // Log the username
-    } else {
-        console.error('ERROR: MongoDB URI does not contain an "@" symbol. Check the format.');
-    }
-} catch (e) {
-    console.error('Error parsing MongoDB URI for logging:', e.message);
-}
 
 mongoose.connect(mongoURI, {
     serverSelectionTimeoutMS: 5000,
@@ -66,31 +60,6 @@ mongoose.connect(mongoURI, {
 })
     .then(async () => {
         console.log('MongoDB Connected Successfully');
-        
-        // Auto-seed default users on startup
-        try {
-            const User = require('./models/User');
-            const users = [
-                { name: 'Admin User', email: 'admin@bites.com', password: 'admin123', role: 'admin' },
-                { name: 'Staff User', email: 'staff@bites.com', password: 'staff123', role: 'staff' },
-                { name: 'Delivery Boy', email: 'delivery@bites.com', password: 'delivery123', role: 'delivery' },
-                { name: 'Student User', email: 'student@bites.com', password: 'student123', role: 'student' }
-            ];
-            for (const u of users) {
-                const exists = await User.findOne({ email: u.email });
-                if (!exists) {
-                    await new User(u).save();
-                    console.log(`Auto-seeded ${u.role} user: ${u.email}`);
-                } else {
-                    // Force sync default credentials
-                    exists.password = u.password;
-                    exists.role = u.role;
-                    await exists.save();
-                }
-            }
-        } catch (err) {
-            console.error('Auto-seeding failed:', err.message);
-        }
     })
     .catch(err => {
         console.error('MongoDB Connection Error Details:');
@@ -114,26 +83,31 @@ app.get('/', (req, res) => {
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
+const { seedRateLimit } = require('./middleware/auth');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Temporary Seed Route (Access via http://localhost:5000/api/seed)
-app.get('/api/seed', async (req, res) => {
+// FIXED: Protect seed route - disabled in production and rate limited in development
+app.get('/api/seed', seedRateLimit, async (req, res) => {
     try {
+        if (process.env.NODE_ENV === 'production') {
+            return res.status(403).json({ message: 'This endpoint is not available in production' });
+        }
+
         const User = require('./models/User');
         const users = [
-            { name: 'Admin User', email: 'admin@bites.com', password: 'admin123', role: 'admin' },
-            { name: 'Staff User', email: 'staff@bites.com', password: 'staff123', role: 'staff' },
-            { name: 'Delivery Boy', email: 'delivery@bites.com', password: 'delivery123', role: 'delivery' },
-            { name: 'Student User', email: 'student@bites.com', password: 'student123', role: 'student' }
+            { name: 'Admin User', email: 'admin@bites.com', password: 'Admin123!', role: 'admin' },
+            { name: 'Staff User', email: 'staff@bites.com', password: 'Staff123!', role: 'staff' },
+            { name: 'Delivery Boy', email: 'delivery@bites.com', password: 'Delivery123!', role: 'delivery' },
+            { name: 'Student User', email: 'student@bites.com', password: 'Student123!', role: 'student' }
         ];
         for (const u of users) {
             const exists = await User.findOne({ email: u.email });
             if (!exists) await new User(u).save();
         }
-        res.json({ message: 'Users seeded successfully' });
+        res.json({ message: 'Users seeded successfully (development only)' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
