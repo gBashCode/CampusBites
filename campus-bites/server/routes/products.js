@@ -53,8 +53,8 @@ router.delete('/:id', verifyUser, checkRole(['admin']), async (req, res) => {
     }
 });
 
-// Seed Data (Public for prototype convenience, or Admin only)
-router.post('/seed', async (req, res) => {
+// Seed Data (Admin Only — protected)
+router.post('/seed', verifyUser, checkRole(['admin']), async (req, res) => {
     try {
         await Product.deleteMany({});
 

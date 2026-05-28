@@ -5,6 +5,7 @@ const sendEmail = require('../utils/sendEmail');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { validateEmail, validatePassword, validateName } = require('../utils/validators');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Register
@@ -12,13 +13,24 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
+        // Input validation
+        if (!validateName(name)) {
+            return res.status(400).json({ message: 'Name must be at least 2 characters' });
+        }
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!validatePassword(password)) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters' });
+        }
+
         // Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create new user (In production, hash password!)
+        // Create new user (password is hashed automatically by pre-save hook)
         const user = new User({
             name,
             email,
@@ -86,14 +98,23 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Input validation
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!password || typeof password !== 'string') {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
         // Check user
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Check password (In production, compare hash!)
-        if (user.password !== password) {
+        // Secure password comparison via bcrypt
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
@@ -109,6 +130,11 @@ router.post('/login', async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
+
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+
         const user = await User.findOne({ email });
 
         if (!user) {
@@ -133,6 +159,11 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
+
+        if (!validatePassword(newPassword)) {
+            return res.status(400).json({ message: 'New password must be at least 8 characters' });
+        }
+
         const user = await User.findOne({
             email,
             resetPasswordOtp: otp,
@@ -143,7 +174,8 @@ router.post('/reset-password', async (req, res) => {
             return res.status(400).json({ message: 'Invalid or expired OTP' });
         }
 
-        user.password = newPassword; // Hash this in production!
+        // Password is hashed automatically by pre-save hook
+        user.password = newPassword;
         user.resetPasswordOtp = undefined;
         user.resetPasswordExpires = undefined;
         await user.save();
@@ -154,7 +186,6 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// Google Login
 // Google Login
 router.post('/google', async (req, res) => {
     try {
@@ -190,11 +221,11 @@ router.post('/google', async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
-            // Create new Google user
+            // Create new Google user (random password is hashed by pre-save hook)
             user = new User({
                 name,
                 email,
-                password: crypto.randomBytes(16).toString('hex'), // Dummy password
+                password: crypto.randomBytes(32).toString('hex'),
                 isVerified: true, // Google users are verified
                 role: 'student'
             });
@@ -226,6 +257,16 @@ router.post('/lecturer/register', async (req, res) => {
     try {
         const { name, email, password, cabinNumber, department, phone } = req.body;
 
+        // Input validation
+        if (!validateName(name)) {
+            return res.status(400).json({ message: 'Name must be at least 2 characters' });
+        }
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!validatePassword(password)) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters' });
+        }
         if (!cabinNumber) {
             return res.status(400).json({ message: 'Cabin number is required for lecturer registration' });
         }
@@ -235,6 +276,7 @@ router.post('/lecturer/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists with this email' });
         }
 
+        // Password is hashed automatically by pre-save hook
         const user = new User({
             name, email, password, role: 'lecturer',
             cabinNumber, department: department || '',
@@ -259,12 +301,21 @@ router.post('/lecturer/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!password || typeof password !== 'string') {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
         const user = await User.findOne({ email, role: 'lecturer' });
         if (!user) {
             return res.status(400).json({ message: 'No lecturer account found with this email' });
         }
 
-        if (user.password !== password) {
+        // Secure password comparison via bcrypt
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
@@ -284,26 +335,55 @@ router.post('/lecturer/login', async (req, res) => {
 router.post('/delivery/register', async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
-        if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required' });
+
+        // Input validation
+        if (!validateName(name)) {
+            return res.status(400).json({ message: 'Name must be at least 2 characters' });
+        }
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!validatePassword(password)) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters' });
+        }
+
         const existing = await User.findOne({ email });
         if (existing) return res.status(400).json({ message: 'Email already registered' });
+
+        // Password is hashed automatically by pre-save hook
         const user = new User({ name, email, password, phone: phone || '', role: 'delivery', isVerified: true });
         await user.save();
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.status(201).json({ message: 'Delivery account created', user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }, token });
-    } catch (err) { res.status(500).json({ message: 'Server error', error: err.message }); }
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
 });
 
 // ─── Delivery Boy Login ──────────────────────────────────────────────────────
 router.post('/delivery/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!validateEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email format' });
+        }
+        if (!password || typeof password !== 'string') {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
         const user = await User.findOne({ email, role: 'delivery' });
         if (!user) return res.status(400).json({ message: 'No delivery account found with this email' });
-        if (user.password !== password) return res.status(400).json({ message: 'Invalid credentials' });
+
+        // Secure password comparison via bcrypt
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ message: 'Login successful', user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone }, token });
-    } catch (err) { res.status(500).json({ message: 'Server error', error: err.message }); }
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
 });
 
 module.exports = router;

@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+
+const SALT_ROUNDS = 10;
 
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -14,5 +17,21 @@ const UserSchema = new mongoose.Schema({
     resetPasswordOtp: { type: String },
     resetPasswordExpires: { type: Date }
 }, { timestamps: true });
+
+// Hash password before saving (only when password field is new or modified)
+UserSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) return next();
+    try {
+        this.password = await bcrypt.hash(this.password, SALT_ROUNDS);
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Timing-safe password comparison
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('User', UserSchema);
