@@ -41,7 +41,9 @@ const sendWhatsAppMessage = async (phone, text) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': apiKey || ''
+                'X-API-Key': apiKey || '',
+                'Bypass-Tunnel-Reminder': 'true',
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({
                 chatId,
