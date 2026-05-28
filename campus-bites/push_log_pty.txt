@@ -1,0 +1,5 @@
+Script started on 2025-12-29 12:03:09+05:30 [COMMAND="git push origin main" TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="49" LINES="10"]
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/gBashCode/project2.000000.git/'
+
+Script done on 2025-12-29 12:04:20+05:30 [COMMAND_EXIT_CODE="128"]

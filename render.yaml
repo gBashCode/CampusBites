@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: campus-bites-server
+    env: node
+    plan: free
+    region: ohio
+    buildCommand: npm install
+    startCommand: node index.js
+    rootDir: campus-bites/server
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false # User will set this in Render dashboard
+      - key: NODE_ENV
+        value: production

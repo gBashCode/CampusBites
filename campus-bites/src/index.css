@@ -1,0 +1,96 @@
+/* Campus Bites - 2026 Redesign (v2.2) */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;900&display=swap');
+
+:root {
+  /* 2026 Palette */
+  --bg-deep: #0D0D0D;
+  --bg-card: #1C1C1E;
+  --primary: #E23744;
+  --primary-glow: rgba(226, 55, 68, 0.4);
+  --text-main: #FFFFFF;
+  --text-muted: #9CA3AF;
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(28, 28, 30, 0.6);
+  --success: #22C55E;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-deep);
+  background-image:
+    linear-gradient(rgba(13, 13, 13, 0.94), rgba(13, 13, 13, 0.94)),
+    url('https://images.unsplash.com/photo-1534422298391-e4f8c170db0f?w=1600&q=80');
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+/* Utilities */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #FFFFFF 0%, #E23744 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px var(--primary-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--primary-glow);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: scale(0.96);
+}
