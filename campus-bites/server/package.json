@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
@@ -18,6 +19,7 @@
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "joi": "^17.11.0",
     "mongoose": "^8.0.0",
     "nodemailer": "^7.0.12",
     "razorpay": "^2.9.6"
