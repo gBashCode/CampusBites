@@ -22,6 +22,45 @@ import LecturerLogin from './pages/lecturer/LecturerLogin'
 import DeliveryLogin from './pages/delivery/DeliveryLogin'
 import DeliveryPortal from './pages/delivery/DeliveryPortal'
 
+class ErrorBoundary extends React.Component {
+    state = { hasError: false, error: null };
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error('ErrorBoundary caught:', error, errorInfo);
+    }
+
+    handleReset = () => {
+        this.setState({ hasError: false, error: null });
+    };
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+                    <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>
+                        <p style={{ color: '#9CA3AF', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                            An unexpected error occurred. Please try again.
+                        </p>
+                        <button
+                            onClick={() => { this.handleReset(); window.location.href = '/'; }}
+                            style={{ padding: '0.75rem 2rem', background: '#E23744', color: 'white', border: 'none', borderRadius: '0.75rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                            Go to Home
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 // Protected Route Component
 const ProtectedRoute = ({ children, roles }) => {
     const { user, loading } = useAuth();
@@ -52,10 +91,12 @@ function App() {
     }
 
     return (
+        <ErrorBoundary>
         <AuthProvider>
             <NotificationProvider>
             <CartProvider>
                 <Router>
+                    <ErrorBoundary>
                     <Routes>
                         <Route path="/" element={<Login />} />
                         <Route path="/register" element={<Register />} />
@@ -112,10 +153,12 @@ function App() {
                         } />
 
                     </Routes>
+                    </ErrorBoundary>
                 </Router>
             </CartProvider>
             </NotificationProvider>
         </AuthProvider>
+        </ErrorBoundary>
     )
 }
 

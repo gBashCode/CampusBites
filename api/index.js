@@ -11,6 +11,9 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
+// Trust first proxy (required for rate limiter behind Vercel)
+app.set('trust proxy', 1);
+
 // ─── Security Headers (Helmet) ──────────────────────────────────────────────
 app.use(helmet({
     crossOriginResourcePolicy: false,
@@ -47,7 +50,7 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // ─── Database Connection ────────────────────────────────────────────────────
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/campus-bites';
+const mongoURI = (process.env.MONGO_URI || 'mongodb://localhost:27017/campus-bites').trim();
 
 if (mongoURI.startsWith('mongodb://') || mongoURI.startsWith('mongodb+srv://')) {
     mongoose.connect(mongoURI, {
@@ -61,7 +64,7 @@ if (mongoURI.startsWith('mongodb://') || mongoURI.startsWith('mongodb+srv://')) 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
-    res.json({ message: 'Campus Bites API is running', dbStatus, env: process.env.NODE_ENV, timestamp: new Date() });
+    res.json({ message: 'Campus Bites API is running', dbStatus, timestamp: new Date() });
 });
 
 const authRoutes = require('../campus-bites/server/routes/auth');
