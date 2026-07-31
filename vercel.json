@@ -1,24 +1,19 @@
 {
-  "buildCommand": "cd campus-bites && npm install && npm run build",
   "outputDirectory": "campus-bites/dist",
-  "installCommand": "cd campus-bites && npm install",
-  "framework": "vite",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/campus-bites/dist/index.html"
     }
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": [
-        "campus-bites/server/**",
-        "campus-bites/server/.env"
-      ]
+      "includeFiles": "campus-bites/**"
     }
   }
 }
