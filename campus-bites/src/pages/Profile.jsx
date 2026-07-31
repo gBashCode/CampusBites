@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
+import API_URL from '../apiConfig';
 import {
     User, Mail, Lock, Phone, MapPin, CreditCard,
     Bell, Shield, LogOut, ChevronRight, Edit2,
@@ -29,7 +30,7 @@ const Profile = () => {
     const handleSave = async () => {
         try {
             const { token } = useAuth();
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
+            const res = await fetch(`${API_URL}/api/auth/profile`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
