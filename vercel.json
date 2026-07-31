@@ -13,7 +13,7 @@
   ],
   "functions": {
     "api/index.js": {
-      "includeFiles": "campus-bites/**"
+      "includeFiles": "campus-bites/server/**"
     }
   }
 }

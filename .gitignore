@@ -32,3 +32,4 @@ yarn-error.log*
 # OpenWA Session Data & Keys
 /OpenWA/data
 /OpenWA/config.json
+.vercel

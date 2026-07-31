@@ -1,7 +1,7 @@
 const path = require('path');
 
-// Load env vars from the server directory
-require('dotenv').config({ path: path.join(__dirname, '..', 'campus-bites', 'server', '.env') });
+// Load env vars — gracefully skip if .env not found (Vercel uses env vars)
+try { require('dotenv').config({ path: path.join(__dirname, '..', 'campus-bites', 'server', '.env') }); } catch(e) {}
 
 const express = require('express');
 const mongoose = require('mongoose');
