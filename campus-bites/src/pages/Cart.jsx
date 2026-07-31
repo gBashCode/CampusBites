@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { Minus, Plus, Clock, ShoppingBag, ArrowRight, CreditCard, Wallet, Heart } from 'lucide-react';
+import { Minus, Plus, Clock, Heart, ShoppingCart, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { PrimaryButton, EmptyState, ErrorDisplay, SuccessDisplay, GlassCard } from '../components/ui';
 
 import API_URL from '../apiConfig';
 
@@ -135,40 +136,12 @@ const Cart = () => {
 
     if (cartItems.length === 0) {
         return (
-            <div style={{
-                minHeight: '80vh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center',
-                color: 'white'
-            }}>
-                <div style={{
-                    background: 'rgba(226, 55, 68, 0.1)',
-                    padding: '2rem',
-                    borderRadius: '50%',
-                    marginBottom: '1.5rem'
-                }}>
-                    <ShoppingBag size={64} color="#E23744" opacity={0.6} />
-                </div>
-                <h2 style={{ marginBottom: '0.5rem' }}>Your Cart is Empty</h2>
-                <p style={{ color: '#9CA3AF' }}>Looks like you haven't added any delicious food yet.</p>
-                <button
-                    onClick={() => navigate('/dashboard/menu')}
-                    style={{
-                        marginTop: '2rem',
-                        background: '#E23744',
-                        color: 'white',
-                        border: 'none',
-                        padding: '1rem 2rem',
-                        borderRadius: '20px',
-                        cursor: 'pointer',
-                        fontWeight: 600
-                    }}
-                >
-                    Browse Menu
-                </button>
+            <div style={{ minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <EmptyState icon={ShoppingCart} title="Your Cart is Empty" description="Looks like you haven't added any delicious food yet.">
+                    <PrimaryButton onClick={() => navigate('/dashboard/menu')} style={{ marginTop: '1.5rem' }}>
+                        Browse Menu
+                    </PrimaryButton>
+                </EmptyState>
             </div>
         );
     }
@@ -270,6 +243,7 @@ const Cart = () => {
                         }}>
                             <button
                                 onClick={() => item.quantity > 1 ? updateQuantity(item._id, -1) : removeFromCart(item._id)}
+                                aria-label={item.quantity > 1 ? `Decrease quantity of ${item.name}` : `Remove ${item.name} from cart`}
                                 style={{ background: 'transparent', border: 'none', color: '#E23744', padding: '6px', cursor: 'pointer' }}
                             >
                                 <Minus size={16} />
@@ -277,6 +251,7 @@ const Cart = () => {
                             <span style={{ margin: '0 8px', fontWeight: 600, fontSize: '0.9rem' }}>{item.quantity}</span>
                             <button
                                 onClick={() => updateQuantity(item._id, 1)}
+                                aria-label={`Increase quantity of ${item.name}`}
                                 style={{ background: 'transparent', border: 'none', color: '#E23744', padding: '6px', cursor: 'pointer' }}
                             >
                                 <Plus size={16} />
@@ -324,11 +299,6 @@ const Cart = () => {
             {/* Donation Option */}
             <div style={{ marginBottom: '2rem' }}>
                 <style>{`
-                    @keyframes pulse-heart {
-                        0% { transform: scale(1); }
-                        50% { transform: scale(1.2); }
-                        100% { transform: scale(1); }
-                    }
                     .donation-card {
                         position: relative;
                         overflow: hidden;
@@ -368,14 +338,9 @@ const Cart = () => {
                     }
                     .clock-number {
                         transition: all 0.3s ease;
-                        font-family: 'Inter', sans-serif;
                     }
                     .clock-hand-shadow {
                         filter: drop-shadow(0 0 8px rgba(226, 55, 68, 0.6));
-                    }
-                    @keyframes sweep {
-                        from { transform: translateX(-50%) rotate(var(--start-deg)); }
-                        to { transform: translateX(-50%) rotate(var(--end-deg)); }
                     }
                 `}</style>
                 <div className="donation-card" style={{
@@ -427,7 +392,7 @@ const Cart = () => {
                         </h3>
                         <p style={{ color: '#9CA3AF', fontSize: '0.9rem', marginBottom: 8 }}>Your order will be delivered to:</p>
                         <p style={{ color: '#E23744', fontWeight: 800, fontSize: '1.3rem' }}>Cabin {user?.cabinNumber}</p>
-                        {user?.department && <p style={{ color: '#6B7280', fontSize: '0.8rem', marginTop: 4 }}>{user.department}</p>}
+                        {user?.department && <p style={{ color: '#8B949E', fontSize: '0.8rem', marginTop: 4 }}>{user.department}</p>}
                     </div>
                 ) : (
                 <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -476,7 +441,7 @@ const Cart = () => {
                                         justifyContent: 'center',
                                         fontSize: '0.9rem',
                                         fontWeight: 700,
-                                        color: num % 3 === 0 ? '#FFFFFF' : '#6B7280',
+                                        color: num % 3 === 0 ? '#FFFFFF' : '#8B949E',
                                         opacity: num % 3 === 0 ? 1 : 0.6
                                     }}
                                 >
@@ -632,6 +597,7 @@ const Cart = () => {
                         }}>
                             <input
                                 type="time"
+                                aria-label="Custom pickup time"
                                 value={convert12to24(pickupTime)}
                                 onChange={(e) => {
                                     if (e.target.value) {
@@ -663,41 +629,19 @@ const Cart = () => {
                             </div>
                         </div>
                     </div>
-                {!isLecturer && <p style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '1rem', textAlign: 'center' }}>Pickup available during college hours: 07:00 AM - 07:00 PM</p>}
+                {!isLecturer && <p style={{ fontSize: '0.75rem', color: '#8B949E', marginTop: '1rem', textAlign: 'center' }}>Pickup available during college hours: 07:00 AM - 07:00 PM</p>}
                 </div>}
             </div>
 
             {/* Checkout Button */}
-            <button
+            <PrimaryButton
                 onClick={handleCheckout}
-                disabled={loading}
-                style={{
-                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                    color: 'white',
-                    border: 'none',
-                    width: '100%',
-                    padding: '1.2rem',
-                    borderRadius: '24px',
-                    fontSize: '1.1rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1,
-                    boxShadow: '0 8px 20px rgba(226, 55, 68, 0.4)',
-                    transition: 'transform 0.2s ease'
-                }}
+                loading={loading}
+                icon={Lock}
+                style={{ width: '100%', padding: '1.2rem', borderRadius: '24px', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
-                <span>{loading ? 'Processing...' : isLecturer ? `🚪 Deliver to Cabin ${user?.cabinNumber}` : 'Place Order'}</span>
-                <div style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    borderRadius: '12px',
-                    padding: '8px'
-                }}>
-                    <ArrowRight size={20} />
-                </div>
-            </button>
+                {isLecturer ? `🚪 Deliver to Cabin ${user?.cabinNumber}` : `Place Order (₹${finalTotal})`}
+            </PrimaryButton>
         </div>
     );
 };

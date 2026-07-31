@@ -4,6 +4,7 @@ import { LogOut, RefreshCw, Clock, Bike, CheckCircle2, Package, Inbox, MapPin, P
 import { useNavigate } from 'react-router-dom';
 
 import API_URL from '../../apiConfig';
+import { StatusChip, PrimaryButton, SecondaryButton, GhostButton, EmptyState } from '../../components/ui';
 
 const DeliveryPortal = () => {
     const [orders, setOrders] = useState([]);
@@ -68,24 +69,16 @@ const DeliveryPortal = () => {
         <div key={order._id} className="glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                    <p style={{ fontSize: '0.65rem', color: '#6B7280', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>DELIVERY TICKET</p>
+                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>DELIVERY TICKET</p>
                     <p style={{ fontWeight: 800, fontSize: '1.25rem', color: 'white', margin: 0 }}>#{order._id.slice(-6).toUpperCase()}</p>
                     <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '4px 0 0 0', fontWeight: 600 }}>
                         Ordered: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.65rem', color: '#6B7280', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>STATUS</p>
-                    <div style={{
-                        background: order.status === 'ready' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        padding: '4px 10px',
-                        borderRadius: '8px',
-                        border: `1px solid ${order.status === 'ready' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
-                        marginTop: '4px'
-                    }}>
-                        <p style={{ fontWeight: 800, color: order.status === 'ready' ? '#22C55E' : '#F59E0B', margin: 0, fontSize: '0.9rem', textTransform: 'uppercase' }}>
-                            {order.status}
-                        </p>
+                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>STATUS</p>
+                    <div style={{ marginTop: '4px' }}>
+                        <StatusChip status={order.status} />
                     </div>
                 </div>
             </div>
@@ -131,7 +124,7 @@ const DeliveryPortal = () => {
                     </div>
                 </div>
 
-                <p style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Contents:</p>
+                <p style={{ fontSize: '0.7rem', color: '#8B949E', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Contents:</p>
                 {order.items.map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
                         <div style={{
@@ -156,13 +149,12 @@ const DeliveryPortal = () => {
 
             <div style={{ marginTop: 'auto' }}>
                 {order.status === 'ready' ? (
-                    <button
+                    <PrimaryButton
                         onClick={() => updateStatus(order._id, 'completed')}
-                        className="btn-action"
                         style={{ backgroundColor: '#22C55E', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
                     >
                         Mark as Delivered
-                    </button>
+                    </PrimaryButton>
                 ) : (
                     <div style={{
                         textAlign: 'center',
@@ -183,10 +175,6 @@ const DeliveryPortal = () => {
     return (
         <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', color: 'white', position: 'relative', overflowX: 'hidden' }}>
             <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(5deg); }
-                }
                 .floating-emoji {
                     position: absolute;
                     font-size: 3.5rem;
@@ -232,7 +220,7 @@ const DeliveryPortal = () => {
                     font-size: 0.95rem;
                     display: flex;
                     align-items: center;
-                    justifyContent: center;
+                    justify-content: center;
                     gap: 8px;
                 }
                 .btn-action:hover {
@@ -314,7 +302,7 @@ const DeliveryPortal = () => {
                     </div>
                     <div>
                         <h1 className="header-title" style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Delivery</h1>
-                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: '#6B7280', margin: 0 }}>Portal v2.0</p>
+                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: '#8B949E', margin: 0 }}>Portal v2.0</p>
                     </div>
                 </div>
 
@@ -348,15 +336,15 @@ const DeliveryPortal = () => {
             <div className="main-container">
                 <div className="stats-grid">
                     <div className="stat-card">
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>QUEUED</p>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>QUEUED</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#F59E0B' }}>{stats.pending + stats.preparing}</p>
                     </div>
                     <div className="stat-card" style={{ borderTop: '4px solid #22C55E' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>READY TO GO</p>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>READY TO GO</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#22C55E' }}>{stats.ready}</p>
                     </div>
-                    <div className="stat-card" style={{ borderTop: '4px solid #6B7280' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>DELIVERED</p>
+                    <div className="stat-card" style={{ borderTop: '4px solid #8B949E' }}>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>DELIVERED</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#9CA3AF' }}>{stats.completed}</p>
                     </div>
                 </div>
@@ -397,10 +385,7 @@ const DeliveryPortal = () => {
                 ) : (
                     <div className="orders-grid">
                         {filteredOrders.length === 0 ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem 0' }}>
-                                <Package size={48} style={{ opacity: 0.1, color: 'white', marginBottom: '1rem' }} />
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>No {filter.toLowerCase()} orders</h2>
-                            </div>
+                            <EmptyState icon={Package} title={`No ${filter.toLowerCase()} orders`} className="empty-state-sm" />
                         ) : (
                             filteredOrders.map(o => <OrderCard key={o._id} order={o} />)
                         )}

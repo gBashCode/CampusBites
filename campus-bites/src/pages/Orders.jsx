@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
     Clock, CheckCircle, Package, ChefHat, RefreshCw,
-    Calendar, ChevronRight, ShoppingBag, Utensils, AlertCircle
+    Calendar, ShoppingBag, Utensils
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
+import { StatusChip, EmptyState, ErrorDisplay, LoadingContainer, PrimaryButton } from '../components/ui';
 
 import API_URL from '../apiConfig';
 
@@ -128,63 +129,17 @@ const Orders = () => {
     const [activeTab, setActiveTab] = useState('active'); // 'active' or 'past'
     const displayedOrders = activeTab === 'active' ? activeOrders : pastOrders;
 
-    if (loading) return (
-        <div style={{
-            minHeight: '80vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#9CA3AF'
-        }}>
-            <div style={{ textAlign: 'center' }}>
-                <RefreshCw className="animate-spin" size={32} color="#E23744" />
-                <p style={{ marginTop: '1rem' }}>Loading your orders...</p>
-            </div>
-        </div>
-    );
+    if (loading) return <LoadingContainer />;
 
     if (error) return (
-        <div style={{
-            minHeight: '80vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#9CA3AF'
-        }}>
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <AlertCircle size={48} color="#E23744" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '1.2rem', color: 'white', marginBottom: '0.5rem' }}>Something went wrong</h3>
-                <p>{error}</p>
-                <button
-                    onClick={handleRefresh}
-                    style={{
-                        marginTop: '1rem',
-                        background: '#E23744',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.8rem 1.5rem',
-                        borderRadius: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                    }}
-                >
-                    Retry
-                </button>
-            </div>
+        <div style={{ minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+            <ErrorDisplay>{error}</ErrorDisplay>
         </div>
     );
 
     return (
         <div style={{ padding: '2rem 1rem 8rem 1rem', color: 'white' }}>
             <style>{`
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
                 .order-card {
                     animation: slideUp 0.5s ease-out;
                     animation-fill-mode: both;
@@ -247,6 +202,7 @@ const Orders = () => {
                     onClick={handleRefresh}
                     disabled={refreshing}
                     className="refresh-btn"
+                    aria-label="Refresh orders"
                     style={{
                         background: 'rgba(255,255,255,0.05)',
                         border: 'none',
@@ -295,38 +251,15 @@ const Orders = () => {
             </div>
 
             {displayedOrders.length === 0 ? (
-                <div style={{
-                    textAlign: 'center',
-                    padding: '4rem 2rem',
-                    background: 'rgba(255,255,255,0.03)',
-                    borderRadius: '24px',
-                    border: '1px dashed rgba(255,255,255,0.1)',
-                    animation: 'fadeIn 0.5s ease-out'
-                }}>
-                    <ShoppingBag size={48} color="#E23744" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                    <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-                        {activeTab === 'active' ? 'No active orders' : 'No order history'}
-                    </h3>
-                    <p style={{ color: '#9CA3AF', marginBottom: '2rem' }}>
-                        {activeTab === 'active'
-                            ? "You don't have any ongoing orders at the moment."
-                            : "Your order history is empty."}
-                    </p>
-                    <button
-                        onClick={() => navigate('/dashboard/menu')}
-                        style={{
-                            background: '#E23744',
-                            color: 'white',
-                            border: 'none',
-                            padding: '1rem 2rem',
-                            borderRadius: '16px',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                        }}
-                    >
+                <EmptyState
+                    icon={ShoppingBag}
+                    title={activeTab === 'active' ? 'No active orders' : 'No order history'}
+                    description={activeTab === 'active' ? "You don't have any ongoing orders at the moment." : "Your order history is empty."}
+                >
+                    <PrimaryButton onClick={() => navigate('/dashboard/menu')} style={{ marginTop: '1rem' }}>
                         Browse Menu
-                    </button>
-                </div>
+                    </PrimaryButton>
+                </EmptyState>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {displayedOrders.map((order, idx) => {
@@ -378,7 +311,7 @@ const Orders = () => {
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px'
                                     }}>
-                                        #{order._id.slice(-4)}
+                                        <StatusChip status={order.status} />
                                     </div>
                                 </div>
 
@@ -498,7 +431,9 @@ const Orders = () => {
                                     >
                                         <RefreshCw size={16} /> Reorder
                                     </button>
-                                    <button style={{
+                                    <button
+                                        aria-label={status.progress < 100 ? 'Track order status' : 'Rate this order'}
+                                        style={{
                                         flex: 2,
                                         background: 'linear-gradient(135deg, #E23744 0%, #DC2626 100%)',
                                         border: 'none',

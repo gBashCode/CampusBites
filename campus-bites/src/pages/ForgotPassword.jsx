@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import API_URL from '../apiConfig';
+import { PrimaryButton, ErrorDisplay, SuccessDisplay } from '../components/ui';
 
 const ForgotPassword = () => {
     const [step, setStep] = useState(1);
@@ -107,33 +108,33 @@ const ForgotPassword = () => {
                     {step === 1 ? 'Enter your email to receive a reset code.' : 'Enter the code and your new password.'}
                 </p>
 
-                {error && <div role="alert" style={{ color: '#F87171', background: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>{error}</div>}
-                {message && <div role="status" style={{ color: '#10B981', background: 'rgba(16, 185, 129, 0.1)', padding: '1rem', borderRadius: '1rem', marginBottom: '1.5rem', textAlign: 'center' }}>{message}</div>}
+                <ErrorDisplay>{error}</ErrorDisplay>
+                <SuccessDisplay>{message}</SuccessDisplay>
 
                 {step === 1 ? (
                     <form onSubmit={handleSendOtp}>
                         <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
                             <Mail size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                            <input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', boxSizing: 'border-box', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem' }} />
+                            <input type="email" placeholder="Email Address" aria-label="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', boxSizing: 'border-box', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem' }} />
                         </div>
-                        <button type="submit" disabled={loading} style={{ width: '100%', boxSizing: 'border-box', padding: '1rem', background: '#E23744', color: 'white', border: 'none', borderRadius: '1rem', fontSize: '1.1rem', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
-                            {loading ? 'Sending...' : 'Send Code'}
-                        </button>
+                        <PrimaryButton type="submit" loading={loading}>
+                            Send Code
+                        </PrimaryButton>
                     </form>
                 ) : (
                     <form onSubmit={handleResetPassword}>
                         <div style={{ marginBottom: '1rem' }}>
-                            <input type="text" placeholder="Enter 6-digit Code" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} inputMode="numeric" pattern="[0-9]*" required style={{ width: '100%', boxSizing: 'border-box', padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem', textAlign: 'center', letterSpacing: '2px' }} />
+                            <input type="text" placeholder="Enter 6-digit Code" aria-label="6-digit verification code" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} maxLength={6} inputMode="numeric" pattern="[0-9]*" required style={{ width: '100%', boxSizing: 'border-box', padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem', textAlign: 'center', letterSpacing: '2px' }} />
                         </div>
                         <div style={{ marginBottom: '1.5rem', position: 'relative' }}>
                             <Lock size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
-                            <input type="password" placeholder="New Password (min 8 chars, 1 uppercase, 1 lowercase, 1 number)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} style={{ width: '100%', boxSizing: 'border-box', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem' }} />
+                            <input type="password" placeholder="New Password (min 8 chars, 1 uppercase, 1 lowercase, 1 number)" aria-label="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} style={{ width: '100%', boxSizing: 'border-box', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', fontSize: '1rem' }} />
                         </div>
-                        <button type="submit" disabled={loading} style={{ width: '100%', boxSizing: 'border-box', padding: '1rem', background: '#E23744', color: 'white', border: 'none', borderRadius: '1rem', fontSize: '1.1rem', fontWeight: 600, cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
-                            {loading ? 'Updating...' : 'Set New Password'}
-                        </button>
+                        <PrimaryButton type="submit" loading={loading}>
+                            Set New Password
+                        </PrimaryButton>
                         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                            <button type="button" onClick={handleResendOtp} disabled={countdown > 0} style={{ background: 'none', border: 'none', color: countdown > 0 ? '#6B7280' : '#E23744', cursor: countdown > 0 ? 'default' : 'pointer', fontSize: '0.9rem', padding: '0.5rem' }}>
+                            <button type="button" onClick={handleResendOtp} disabled={countdown > 0} style={{ background: 'none', border: 'none', color: countdown > 0 ? '#8B949E' : '#E23744', cursor: countdown > 0 ? 'default' : 'pointer', fontSize: '0.9rem', padding: '0.5rem' }}>
                                 {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend Code'}
                             </button>
                         </div>

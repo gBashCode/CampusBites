@@ -8,6 +8,7 @@ import {
     Bell, Shield, LogOut, ChevronRight, Edit2,
     Save, X, Heart, Clock, Settings, HelpCircle
 } from 'lucide-react';
+import { PrimaryButton, SecondaryButton, GlassCard, ErrorDisplay, SuccessDisplay } from '../components/ui';
 
 const Profile = () => {
     const { user, logout } = useAuth();
@@ -94,15 +95,15 @@ const Profile = () => {
             </div>
 
             {/* Profile Card */}
-            <div className="glass-panel" style={{
+            <GlassCard elevated style={{
                 padding: '2rem',
-                borderRadius: '24px',
                 marginBottom: '2rem',
                 position: 'relative'
             }}>
                 {/* Edit/Save Button */}
-                <button
+                <SecondaryButton
                     onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                    icon={isEditing ? Save : Edit2}
                     style={{
                         position: 'absolute',
                         top: '1.5rem',
@@ -112,28 +113,17 @@ const Profile = () => {
                         color: isEditing ? 'white' : '#E23744',
                         padding: '0.5rem 1rem',
                         borderRadius: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
                         fontSize: '0.85rem',
                         fontWeight: 600
                     }}
                 >
-                    {isEditing ? (
-                        <>
-                            <Save size={16} /> Save
-                        </>
-                    ) : (
-                        <>
-                            <Edit2 size={16} /> Edit
-                        </>
-                    )}
-                </button>
+                    {isEditing ? 'Save' : 'Edit'}
+                </SecondaryButton>
 
                 {isEditing && (
-                    <button
+                    <SecondaryButton
                         onClick={() => setIsEditing(false)}
+                        icon={X}
                         style={{
                             position: 'absolute',
                             top: '1.5rem',
@@ -143,15 +133,11 @@ const Profile = () => {
                             color: '#9CA3AF',
                             padding: '0.5rem 1rem',
                             borderRadius: '12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
                             fontSize: '0.85rem'
                         }}
                     >
-                        <X size={16} /> Cancel
-                    </button>
+                        Cancel
+                    </SecondaryButton>
                 )}
 
                 {/* Avatar */}
@@ -176,6 +162,7 @@ const Profile = () => {
                     {isEditing ? (
                         <input
                             type="text"
+                            aria-label="Your name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             style={{
@@ -224,6 +211,7 @@ const Profile = () => {
                             {isEditing ? (
                                 <input
                                     type="email"
+                                    aria-label="Your email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     style={{
@@ -262,6 +250,7 @@ const Profile = () => {
                             {isEditing ? (
                                 <input
                                     type="tel"
+                                    aria-label="Your phone number"
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="Add phone number"
@@ -301,6 +290,7 @@ const Profile = () => {
                             {isEditing ? (
                                 <input
                                     type="text"
+                                    aria-label="Your address"
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                     placeholder="Add delivery address"
@@ -319,9 +309,7 @@ const Profile = () => {
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Account Sections */}
+            </GlassCard>
             {accountSections.map((section, idx) => (
                 <div key={idx} style={{ marginBottom: '2rem' }}>
                     <h3 style={{
@@ -409,7 +397,7 @@ const Profile = () => {
             <div style={{
                 textAlign: 'center',
                 marginTop: '2rem',
-                color: '#6B7280',
+                color: '#8B949E',
                 fontSize: '0.8rem'
             }}>
                 Campus Bites v2.0 • 2026 Edition

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LogOut, RefreshCw, Clock, ChefHat, CheckCircle2, Flame, Inbox, PackageCheck, Phone, MapPin } from 'lucide-react';
 
 import API_URL from '../../apiConfig';
+import { StatusChip, PrimaryButton, SecondaryButton, GhostButton, LoadingContainer, EmptyState } from '../../components/ui';
 
 const KitchenView = () => {
     const [orders, setOrders] = useState([]);
@@ -81,14 +82,14 @@ const KitchenView = () => {
         <div key={order._id} className="glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
-                    <p style={{ fontSize: '0.65rem', color: '#6B7280', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>ORDER TICKET</p>
+                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>ORDER TICKET</p>
                     <p style={{ fontWeight: 800, fontSize: '1.25rem', color: 'white', margin: 0 }}>#{order._id.slice(-6).toUpperCase()}</p>
                     <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '4px 0 0 0', fontWeight: 600 }}>
                         Ordered: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.65rem', color: '#6B7280', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>PICKUP TIME</p>
+                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>PICKUP TIME</p>
                     <div style={{
                         background: 'rgba(226, 55, 68, 0.1)',
                         padding: '4px 10px',
@@ -147,7 +148,7 @@ const KitchenView = () => {
                     </div>
                 )}
 
-                <p style={{ fontSize: '0.7rem', color: '#6B7280', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Items:</p>
+                <p style={{ fontSize: '0.7rem', color: '#8B949E', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Items:</p>
                 {order.items.map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
                         {/* Veg/Non-Veg Badge */}
@@ -203,49 +204,44 @@ const KitchenView = () => {
             <div style={{ marginTop: 'auto' }}>
                 {confirmAction?.orderId === order._id ? (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
+                        <PrimaryButton
                             onClick={() => updateStatus(order._id, confirmAction.newStatus)}
-                            className="btn-action"
                             style={{ flex: 2, backgroundColor: '#22C55E', color: 'white', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
                         >
                             Confirm
-                        </button>
-                        <button
+                        </PrimaryButton>
+                        <SecondaryButton
                             onClick={() => setConfirmAction(null)}
-                            className="btn-action"
                             style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', color: '#9CA3AF' }}
                         >
                             Cancel
-                        </button>
+                        </SecondaryButton>
                     </div>
                 ) : (
                     <>
                         {order.status === 'pending' && (
-                            <button
+                            <PrimaryButton
                                 onClick={() => handleStatusAction(order._id, 'preparing', 'Accept & Start Preparing')}
-                                className="btn-action"
                                 style={{ backgroundColor: '#E23744', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(226, 55, 68, 0.2)' }}
                             >
                                 Accept & Start Preparing
-                            </button>
+                            </PrimaryButton>
                         )}
                         {order.status === 'preparing' && (
-                            <button
+                            <PrimaryButton
                                 onClick={() => handleStatusAction(order._id, 'ready', 'Mark as Ready')}
-                                className="btn-action"
                                 style={{ backgroundColor: '#F59E0B', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(245, 158, 11, 0.2)' }}
                             >
                                 Mark as Ready to Pickup
-                            </button>
+                            </PrimaryButton>
                         )}
                         {order.status === 'ready' && (
-                            <button
+                            <PrimaryButton
                                 onClick={() => handleStatusAction(order._id, 'completed', 'Complete Order')}
-                                className="btn-action"
                                 style={{ backgroundColor: '#22C55E', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
                             >
                                 Handover & Complete
-                            </button>
+                            </PrimaryButton>
                         )}
                     </>
                 )}
@@ -273,10 +269,6 @@ const KitchenView = () => {
         <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', color: 'white', position: 'relative', overflowX: 'hidden' }}>
             {/* 2026 Graphics & UI Styles */}
             <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(5deg); }
-                }
                 .floating-emoji {
                     position: absolute;
                     font-size: 3.5rem;
@@ -358,7 +350,7 @@ const KitchenView = () => {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
                     gap: 1.5rem;
-                    marginBottom: 3rem;
+                    margin-bottom: 3rem;
                 }
                 .main-container {
                     maxWidth: 1400px;
@@ -408,7 +400,7 @@ const KitchenView = () => {
                     </div>
                     <div>
                         <h1 className="header-title" style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Kitchen</h1>
-                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: '#6B7280', margin: 0 }}>Terminal v2.0</p>
+                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: '#8B949E', margin: 0 }}>Terminal v2.0</p>
                     </div>
                 </div>
 
@@ -427,7 +419,7 @@ const KitchenView = () => {
                     }}>
                         <RefreshCw size={18} /> <span>Sync</span>
                     </button>
-                    <button onClick={logout} style={{
+                    <button onClick={logout} aria-label="Log out" style={{
                         background: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid rgba(239, 68, 68, 0.2)',
                         color: '#F87171',
@@ -441,50 +433,32 @@ const KitchenView = () => {
 
             <div className="main-container">
                 {error && (
-                    <div style={{
-                        textAlign: 'center',
-                        padding: '3rem',
-                        background: 'rgba(239, 68, 68, 0.05)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        marginBottom: '2rem'
-                    }}>
-                        <ChefHat size={36} style={{ color: '#E23744', opacity: 0.5, marginBottom: '0.5rem' }} />
-                        <p style={{ color: '#F87171', fontWeight: 600 }}>{error}</p>
-                        <button
-                            onClick={fetchOrders}
-                            style={{
-                                marginTop: '1rem',
-                                background: '#E23744',
-                                color: 'white',
-                                border: 'none',
-                                padding: '0.6rem 1.2rem',
-                                borderRadius: '10px',
-                                fontWeight: 600,
-                                cursor: 'pointer'
-                            }}
-                        >
-                            Retry
-                        </button>
+                    <div style={{ marginBottom: '2rem' }}>
+                        <EmptyState icon={ChefHat} title="Error Loading Orders">
+                            <p style={{ color: '#F87171', fontWeight: 600 }}>{error}</p>
+                            <PrimaryButton onClick={fetchOrders} style={{ marginTop: '1rem', backgroundColor: '#E23744', color: 'white' }}>
+                                Retry
+                            </PrimaryButton>
+                        </EmptyState>
                     </div>
                 )}
 
                 {/* Stats Dashboard */}
                 <div className="stats-grid">
                     <div className="stat-card">
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>INCOMING</p>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>INCOMING</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#F59E0B' }}>{stats.pending}</p>
                     </div>
                     <div className="stat-card" style={{ borderTop: '4px solid #E23744' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>COOKING</p>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>COOKING</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#E23744' }}>{stats.preparing}</p>
                     </div>
                     <div className="stat-card" style={{ borderTop: '4px solid #22C55E' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>READY</p>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>READY</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#22C55E' }}>{stats.ready}</p>
                     </div>
-                    <div className="stat-card" style={{ borderTop: '4px solid #6B7280' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#6B7280', marginBottom: '0.5rem', fontWeight: 600 }}>DONE</p>
+                    <div className="stat-card" style={{ borderTop: '4px solid #8B949E' }}>
+                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>DONE</p>
                         <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#9CA3AF' }}>{stats.completed}</p>
                     </div>
                 </div>
@@ -534,10 +508,7 @@ const KitchenView = () => {
                 ) : (
                     <div className="orders-grid">
                         {filteredOrders.length === 0 ? (
-                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem 0' }}>
-                                <ChefHat size={48} style={{ opacity: 0.1, color: 'white', marginBottom: '1rem' }} />
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem 0' }}>No {filter.toLowerCase()} orders</h2>
-                            </div>
+                            <EmptyState icon={ChefHat} title={`No ${filter.toLowerCase()} orders`} className="empty-state-sm" />
                         ) : (
                             filteredOrders.map(o => <OrderCard key={o._id} order={o} />)
                         )}

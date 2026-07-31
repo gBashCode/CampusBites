@@ -2,6 +2,7 @@ import React, { useState, Component } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { GlassCard } from '../../components/ui';
 
 class ErrorBoundary extends Component {
     constructor(props) {
@@ -52,10 +53,6 @@ const AdminDashboard = () => {
         }}>
             {/* Styles */}
             <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-15px) rotate(5deg); }
-                }
                 .floating-emoji {
                     position: absolute;
                     font-size: 3rem;
@@ -161,7 +158,7 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '-1px' }}>Admin</h2>
-                            <p style={{ color: '#6B7280', fontSize: '0.78rem', margin: 0 }}>{user?.name || 'Master Access'}</p>
+                            <p style={{ color: '#8B949E', fontSize: '0.78rem', margin: 0 }}>{user?.name || 'Master Access'}</p>
                         </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -213,7 +210,7 @@ const AdminDashboard = () => {
                         </div>
                         <div style={{ overflow: 'hidden' }}>
                             <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name || 'Admin'}</p>
-                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#6B7280' }}>Master Access</p>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#8B949E' }}>Master Access</p>
                         </div>
                     </div>
                 </div>
@@ -248,11 +245,11 @@ const AdminDashboard = () => {
 
                 {/* Main Content */}
                 <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-                    <div className="glass-content">
+                    <GlassCard elevated className="glass-content">
                         <ErrorBoundary>
                             <Outlet />
                         </ErrorBoundary>
-                    </div>
+                    </GlassCard>
                 </main>
             </div>
         </div>

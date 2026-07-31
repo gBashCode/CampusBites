@@ -1,0 +1,112 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Campus Bites — Design Tokens
+   Central source of truth for colors, spacing, typography, radii, shadows
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Colors ────────────────────────────────────────────────────────────── */
+  --bg-deep: #0D0D0D;
+  --bg-card: #1C1C1E;
+  --bg-elevated: #2A2A2C;
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --surface-active: rgba(255, 255, 255, 0.12);
+
+  --primary: #E23744;
+  --primary-hover: #DC2626;
+  --primary-glow: rgba(226, 55, 68, 0.4);
+  --primary-surface: rgba(226, 55, 68, 0.1);
+  --primary-border: rgba(226, 55, 68, 0.3);
+
+  --success: #22C55E;
+  --success-surface: rgba(34, 197, 94, 0.1);
+  --success-border: rgba(34, 197, 94, 0.3);
+
+  --warning: #F59E0B;
+  --warning-surface: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --danger: #EF4444;
+  --danger-surface: rgba(239, 68, 68, 0.1);
+  --danger-border: rgba(239, 68, 68, 0.3);
+
+  --info: #3B82F6;
+  --info-surface: rgba(59, 130, 246, 0.1);
+
+  --purple: #7c3aed;
+  --purple-surface: rgba(124, 58, 237, 0.1);
+  --purple-border: rgba(167, 139, 250, 0.3);
+  --purple-glow: rgba(124, 58, 237, 0.35);
+
+  /* ── Text ──────────────────────────────────────────────────────────────── */
+  --text-main: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #8B949E;
+  --text-dim: #6B7280;
+
+  /* ── Glass ─────────────────────────────────────────────────────────────── */
+  --glass-bg: rgba(28, 28, 30, 0.6);
+  --glass-bg-solid: rgba(26, 26, 28, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+
+  /* ── Border Radius ─────────────────────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ── Spacing Scale ─────────────────────────────────────────────────────── */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* ── Shadows ───────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 20px 50px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 30px var(--primary-glow);
+  --shadow-button: 0 10px 30px rgba(226, 55, 68, 0.3);
+  --shadow-button-hover: 0 15px 40px rgba(226, 55, 68, 0.4);
+
+  /* ── Typography ────────────────────────────────────────────────────────── */
+  --font-body: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-display: 'Bebas Neue', 'Outfit', sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-base: 0.95rem;
+  --text-md: 1rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-display: 3.5rem;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  /* ── Transitions ───────────────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-slide: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+
+  /* ── Z-Index ───────────────────────────────────────────────────────────── */
+  --z-nav: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+}

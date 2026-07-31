@@ -23,7 +23,8 @@ const Dashboard = () => {
             color: 'white',
             paddingBottom: '80px'
         }}>
-            <main style={{
+            <a href="#main-content" className="skip-to-content">Skip to content</a>
+            <main id="main-content" style={{
                 width: '100%',
                 maxWidth: '600px',
                 margin: '0 auto',

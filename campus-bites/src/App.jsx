@@ -40,7 +40,7 @@ class ErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', color: 'white', fontFamily: 'Inter, sans-serif' }}>
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', color: 'white' }}>
                     <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
                         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>

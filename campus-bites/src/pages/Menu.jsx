@@ -3,9 +3,10 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import {
-    ShoppingCart, Star, Clock, Search, TrendingUp, Sparkles, Filter,
-    Plus, ChefHat, User, Mail, Phone, MapPin, Instagram, Twitter
+    Star, Search, TrendingUp, Filter,
+    Plus, Mail, Phone, MapPin, Instagram, Twitter
 } from 'lucide-react';
+import { FilterPill, EmptyState, ErrorDisplay, LoadingContainer, VegBadge } from '../components/ui';
 import API_URL from '../apiConfig';
 
 const CONTACT_INFO = {
@@ -66,75 +67,17 @@ const Menu = () => {
         return matchesCategory && matchesSearch && matchesFoodType;
     });
 
-    if (loading) return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#9CA3AF'
-        }}>
-            <style>{`
-                @keyframes spin-slow {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
-            <Sparkles style={{ animation: 'spin-slow 3s linear infinite' }} size={48} color="#E23744" />
-        </div>
-    );
+    if (loading) return <LoadingContainer />;
 
     if (error) return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: '#9CA3AF',
-            textAlign: 'center',
-            padding: '2rem'
-        }}>
-            <ChefHat size={48} color="#E23744" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'white' }}>Oops!</h3>
-            <p>{error}</p>
-            <button
-                onClick={() => window.location.reload()}
-                style={{
-                    marginTop: '1rem',
-                    background: '#E23744',
-                    color: 'white',
-                    border: 'none',
-                    padding: '0.8rem 1.5rem',
-                    borderRadius: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                }}
-            >
-                Try Again
-            </button>
+        <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
+            <ErrorDisplay>{error}</ErrorDisplay>
         </div>
     );
 
     return (
         <div style={{ padding: '0 1rem 8rem 1rem', maxWidth: '600px', margin: '0 auto' }}>
             <style>{`
-                @keyframes slideInUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes scaleIn {
-                    from { transform: scale(0.9); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                @keyframes shimmer {
-                    0% { background-position: -200% 0; }
-                    100% { background-position: 200% 0; }
-                }
                 .product-card {
                     animation: scaleIn 0.4s ease-out forwards;
                     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -214,6 +157,7 @@ const Menu = () => {
                     <input
                         type="text"
                         placeholder="Search for food..."
+                        aria-label="Search for food"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{
@@ -301,19 +245,6 @@ const Menu = () => {
 
                 {/* Veg/Non-Veg Filter Buttons */}
                 <style>{`
-                    @keyframes pulse-glow {
-                        0%, 100% { box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
-                        50% { box-shadow: 0 0 25px rgba(34, 197, 94, 0.6); }
-                    }
-                    @keyframes pulse-glow-red {
-                        0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
-                        50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.6); }
-                    }
-                    @keyframes bounce-in {
-                        0% { transform: scale(0.8); opacity: 0; }
-                        50% { transform: scale(1.05); }
-                        100% { transform: scale(1); opacity: 1; }
-                    }
                     .food-type-btn {
                         transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     }
@@ -331,125 +262,15 @@ const Menu = () => {
                     marginBottom: '2rem',
                     animation: 'bounce-in 0.6s ease-out 0.2s backwards'
                 }}>
-                    {/* All Button */}
-                    <button
-                        onClick={() => setFoodTypeFilter('all')}
-                        className="food-type-btn glass-panel"
-                        aria-label="Show all items"
-                        aria-pressed={foodTypeFilter === 'all'}
-                        style={{
-                            flex: 1,
-                            padding: '14px 20px',
-                            borderRadius: '16px',
-                            border: foodTypeFilter === 'all' ? '2px solid #E23744' : '1px solid rgba(255,255,255,0.1)',
-                            background: foodTypeFilter === 'all'
-                                ? 'linear-gradient(135deg, rgba(226, 55, 68, 0.2) 0%, rgba(220, 38, 38, 0.1) 100%)'
-                                : 'rgba(255,255,255,0.03)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.95rem',
-                            color: foodTypeFilter === 'all' ? '#E23744' : '#9CA3AF',
-                            boxShadow: foodTypeFilter === 'all' ? '0 8px 20px rgba(226, 55, 68, 0.3)' : 'none'
-                        }}
-                    >
-                        <span style={{ fontSize: '1.2rem' }}>🍽️</span>
-                        All Items
-                    </button>
-
-                    {/* Veg Button */}
-                    <button
-                        onClick={() => setFoodTypeFilter('veg')}
-                        className="food-type-btn glass-panel"
-                        aria-label="Show vegetarian items only"
-                        aria-pressed={foodTypeFilter === 'veg'}
-                        style={{
-                            flex: 1,
-                            padding: '14px 20px',
-                            borderRadius: '16px',
-                            border: foodTypeFilter === 'veg' ? '2px solid #22C55E' : '1px solid rgba(255,255,255,0.1)',
-                            background: foodTypeFilter === 'veg'
-                                ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.1) 100%)'
-                                : 'rgba(255,255,255,0.03)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.95rem',
-                            color: foodTypeFilter === 'veg' ? '#22C55E' : '#9CA3AF',
-                            animation: foodTypeFilter === 'veg' ? 'pulse-glow 2s infinite' : 'none'
-                        }}
-                    >
-                        <div style={{
-                            width: '18px',
-                            height: '18px',
-                            border: `2px solid ${foodTypeFilter === 'veg' ? '#22C55E' : '#9CA3AF'}`,
-                            borderRadius: '3px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'white'
-                        }}>
-                            <div style={{
-                                width: '8px',
-                                height: '8px',
-                                borderRadius: '50%',
-                                background: foodTypeFilter === 'veg' ? '#22C55E' : '#9CA3AF'
-                            }} />
-                        </div>
-                        Veg Only
-                    </button>
-
-                    {/* Non-Veg Button */}
-                    <button
-                        onClick={() => setFoodTypeFilter('nonveg')}
-                        className="food-type-btn glass-panel"
-                        aria-label="Show non-vegetarian items only"
-                        aria-pressed={foodTypeFilter === 'nonveg'}
-                        style={{
-                            flex: 1,
-                            padding: '14px 20px',
-                            borderRadius: '16px',
-                            border: foodTypeFilter === 'nonveg' ? '2px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
-                            background: foodTypeFilter === 'nonveg'
-                                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)'
-                                : 'rgba(255,255,255,0.03)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            fontWeight: 700,
-                            fontSize: '0.95rem',
-                            color: foodTypeFilter === 'nonveg' ? '#EF4444' : '#9CA3AF',
-                            animation: foodTypeFilter === 'nonveg' ? 'pulse-glow-red 2s infinite' : 'none'
-                        }}
-                    >
-                        <div style={{
-                            width: '18px',
-                            height: '18px',
-                            border: `2px solid ${foodTypeFilter === 'nonveg' ? '#EF4444' : '#9CA3AF'}`,
-                            borderRadius: '3px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: 'white'
-                        }}>
-                            <div style={{
-                                width: 0,
-                                height: 0,
-                                borderLeft: '4px solid transparent',
-                                borderRight: '4px solid transparent',
-                                borderBottom: `7px solid ${foodTypeFilter === 'nonveg' ? '#EF4444' : '#9CA3AF'}`
-                            }} />
-                        </div>
-                        Non-Veg
-                    </button>
+                    <FilterPill active={foodTypeFilter === 'all'} onClick={() => setFoodTypeFilter('all')} style={{ flex: 1, padding: '14px 20px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🍽️</span> All Items
+                    </FilterPill>
+                    <FilterPill active={foodTypeFilter === 'veg'} onClick={() => setFoodTypeFilter('veg')} style={{ flex: 1, padding: '14px 20px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem' }}>
+                        🟢 Veg Only
+                    </FilterPill>
+                    <FilterPill active={foodTypeFilter === 'nonveg'} onClick={() => setFoodTypeFilter('nonveg')} style={{ flex: 1, padding: '14px 20px', borderRadius: '16px', fontWeight: 700, fontSize: '0.95rem' }}>
+                        🔴 Non-Veg
+                    </FilterPill>
                 </div>
 
                 {/* Product Grid */}
@@ -460,9 +281,12 @@ const Menu = () => {
                     <span style={{ fontSize: '0.8rem', color: '#9CA3AF', fontWeight: 500 }}>{filteredProducts.length} items</span>
                 </div>
 
+                {filteredProducts.length === 0 ? (
+                    <EmptyState icon={Search} title="No items found" description="Try a different search or filter." />
+                ) : (
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)', // 2 columns for mobile
+                    gridTemplateColumns: 'repeat(2, 1fr)',
                     gap: '1rem'
                 }}>
                     {filteredProducts.map((product, idx) => (
@@ -489,36 +313,8 @@ const Menu = () => {
                                 />
 
                                 {/* Veg/Non-Veg Badge - Top Right */}
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '8px',
-                                    right: '8px',
-                                    width: '18px',
-                                    height: '18px',
-                                    border: `2px solid ${product.isVeg !== false ? '#22C55E' : '#EF4444'}`,
-                                    borderRadius: '3px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    background: 'white',
-                                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                                }}>
-                                    {product.isVeg !== false ? (
-                                        <div style={{
-                                            width: '8px',
-                                            height: '8px',
-                                            borderRadius: '50%',
-                                            background: '#22C55E'
-                                        }} />
-                                    ) : (
-                                        <div style={{
-                                            width: 0,
-                                            height: 0,
-                                            borderLeft: '4px solid transparent',
-                                            borderRight: '4px solid transparent',
-                                            borderBottom: '7px solid #EF4444'
-                                        }} />
-                                    )}
+                                <div style={{ position: 'absolute', top: '8px', right: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+                                    <VegBadge isVeg={product.isVeg !== false} />
                                 </div>
 
                                 {/* Badges */}
@@ -582,6 +378,7 @@ const Menu = () => {
                         </div>
                     ))}
                 </div>
+                )}
 
 
                 {/* Premium High-Res Footer */}

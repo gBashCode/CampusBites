@@ -14,7 +14,7 @@ const Analytics = () => {
         <div style={{ color: 'white' }}>
             <div style={{ marginBottom: '2.5rem' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-1px' }}>System Analytics</h1>
-                <p style={{ color: '#6B7280', margin: '4px 0 0 0' }}>Real-time performance tracking and metrics</p>
+                <p style={{ color: '#8B949E', margin: '4px 0 0 0' }}>Real-time performance tracking and metrics</p>
             </div>
 
             {/* Quick Stats Grid */}
@@ -42,7 +42,7 @@ const Analytics = () => {
                             <stat.icon size={22} />
                         </div>
 
-                        <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: '0 0 8px 0', fontWeight: 600 }}>{stat.label}</p>
+                        <p style={{ fontSize: '0.85rem', color: '#8B949E', margin: '0 0 8px 0', fontWeight: 600 }}>{stat.label}</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                             <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>{stat.value}</h3>
                             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#22C55E', display: 'flex', alignItems: 'center' }}>
@@ -81,7 +81,7 @@ const Analytics = () => {
                 }}>
                     <BarChart3 size={48} style={{ color: '#E23744', opacity: 0.2, marginBottom: '1.5rem' }} />
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Sales Traffic</h3>
-                    <p style={{ color: '#6B7280', maxWidth: '300px' }}>Revenue charts and hourly traffic logs will be live in the next update.</p>
+                    <p style={{ color: '#8B949E', maxWidth: '300px' }}>Revenue charts and hourly traffic logs will be live in the next update.</p>
                 </div>
 
                 <div style={{
@@ -98,7 +98,7 @@ const Analytics = () => {
                 }}>
                     <TrendingUp size={48} style={{ color: '#3B82F6', opacity: 0.2, marginBottom: '1.5rem' }} />
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Orders Forecast</h3>
-                    <p style={{ color: '#6B7280', maxWidth: '300px' }}>AI-driven demand forecasting will appear here based on historical data.</p>
+                    <p style={{ color: '#8B949E', maxWidth: '300px' }}>AI-driven demand forecasting will appear here based on historical data.</p>
                 </div>
             </div>
         </div>

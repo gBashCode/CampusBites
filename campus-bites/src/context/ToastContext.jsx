@@ -15,10 +15,15 @@ export const ToastProvider = ({ children }) => {
         }, duration);
     }, []);
 
+    const dismiss = useCallback((id) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, []);
+
     const toast = {
         success: (msg, dur) => addToast(msg, 'success', dur),
         error: (msg, dur) => addToast(msg, 'error', dur),
         info: (msg, dur) => addToast(msg, 'info', dur),
+        dismiss,
     };
 
     return (
@@ -38,7 +43,7 @@ export const ToastProvider = ({ children }) => {
                 width: '90%'
             }}>
                 {toasts.map(t => (
-                    <div key={t.id} style={{
+                    <div key={t.id} onClick={() => dismiss(t.id)} style={{
                         padding: '12px 20px',
                         borderRadius: '14px',
                         fontWeight: 600,
@@ -46,6 +51,7 @@ export const ToastProvider = ({ children }) => {
                         textAlign: 'center',
                         backdropFilter: 'blur(16px)',
                         pointerEvents: 'auto',
+                        cursor: 'pointer',
                         animation: 'toastIn 0.3s ease-out',
                         ...(t.type === 'success' && {
                             background: 'rgba(34, 197, 94, 0.9)',
@@ -67,12 +73,6 @@ export const ToastProvider = ({ children }) => {
                     </div>
                 ))}
             </div>
-            <style>{`
-                @keyframes toastIn {
-                    from { opacity: 0; transform: translateY(-20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
         </ToastContext.Provider>
     );
 };
