@@ -23,10 +23,26 @@ const Profile = () => {
         navigate('/');
     };
 
-    const handleSave = () => {
-        // TODO: API call to update profile
-        setIsEditing(false);
-        alert('Profile updated successfully!');
+    const handleSave = async () => {
+        try {
+            const { token } = useAuth();
+            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: formData.name, phone: formData.phone, address: formData.address })
+            });
+            if (res.ok) {
+                setIsEditing(false);
+                alert('Profile updated successfully!');
+            } else {
+                alert('Failed to update profile');
+            }
+        } catch (err) {
+            alert('Error updating profile');
+        }
     };
 
     const accountSections = [

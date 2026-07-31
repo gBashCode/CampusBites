@@ -18,7 +18,6 @@ import Analytics from './pages/admin/Analytics'
 import KitchenView from './pages/staff/KitchenView'
 import ForgotPassword from './pages/ForgotPassword'
 import LecturerLogin from './pages/lecturer/LecturerLogin'
-import LecturerPortal from './pages/lecturer/LecturerPortal'
 import DeliveryLogin from './pages/delivery/DeliveryLogin'
 import DeliveryPortal from './pages/delivery/DeliveryPortal'
 

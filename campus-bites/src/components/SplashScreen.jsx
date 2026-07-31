@@ -6,15 +6,14 @@ const SplashScreen = ({ onComplete }) => {
     const [exit, setExit] = useState(false);
 
     useEffect(() => {
-        // Trigger exit animation
-        const timer = setTimeout(() => {
-            setExit(true);
-        }, 2200); // Display for 2.2 seconds
-
-        // Notify parent after exit animation finishes
-        const completeTimer = setTimeout(() => {
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) {
             onComplete();
-        }, 3300); // 2200ms + 1000ms transition time + 100ms buffer
+            return;
+        }
+
+        const timer = setTimeout(() => setExit(true), 2200);
+        const completeTimer = setTimeout(() => onComplete(), 3300);
 
         return () => {
             clearTimeout(timer);
@@ -24,6 +23,30 @@ const SplashScreen = ({ onComplete }) => {
 
     return (
         <div className={`splash-screen ${exit ? 'exit' : ''}`}>
+            <button
+                onClick={onComplete}
+                aria-label="Skip splash screen"
+                style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    background: 'rgba(255,255,255,0.2)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    zIndex: 10,
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+            >
+                Skip
+            </button>
             <div className="splash-logo-container">
                 <div className="logo-3d-block">
                     <UtensilsCrossed size={36} className="logo-icon-3d" />

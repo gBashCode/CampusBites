@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { Minus, Plus, Clock, ShoppingBag, ArrowRight, CreditCard, Wallet, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,10 +10,19 @@ import API_URL from '../apiConfig';
 const Cart = () => {
     const { cartItems, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
     const { user, token } = useAuth();
+    const toast = useToast();
     const [pickupTime, setPickupTime] = useState('');
     const [isDonationChecked, setIsDonationChecked] = useState(false);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // For lecturer: auto-set pickupTime to cabin delivery label
+    const isLecturer = user?.role === 'lecturer';
+    React.useEffect(() => {
+        if (isLecturer && !pickupTime) {
+            setPickupTime(`Cabin ${user?.cabinNumber || 'Delivery'}`);
+        }
+    }, [isLecturer, pickupTime, user?.cabinNumber]);
 
     const taxAmount = Math.round(cartTotal * 0.05);
     const donationAmount = isDonationChecked ? 3 : 0;
@@ -20,12 +30,12 @@ const Cart = () => {
 
     const handleCheckout = async () => {
         if (!pickupTime) {
-            alert('Please select a pickup time');
+            toast.error('Please select a pickup time');
             return;
         }
 
         if (!user || !token) {
-            alert('Please log in to place an order');
+            toast.error('Please log in to place an order');
             navigate('/');
             return;
         }
@@ -79,14 +89,14 @@ const Cart = () => {
 
                         if (verifyRes.ok) {
                             clearCart();
-                            alert('Order placed successfully!');
+                            toast.success('Order placed successfully!');
                             navigate('/dashboard/orders');
                         } else {
-                            alert('Payment verification failed');
+                            toast.error('Payment verification failed');
                         }
                     } catch (err) {
                         console.error('Verification error:', err);
-                        alert('Error verifying payment');
+                        toast.error('Error verifying payment');
                     }
                 },
                 prefill: {
@@ -103,17 +113,11 @@ const Cart = () => {
 
         } catch (err) {
             console.error('Checkout error:', err);
-            alert(err.message || 'Failed to process checkout');
+            toast.error(err.message || 'Failed to process checkout');
         } finally {
             setLoading(false);
         }
     };
-
-    // For lecturer: auto-set pickupTime to cabin delivery label
-    const isLecturer = user?.role === 'lecturer';
-    if (isLecturer && !pickupTime) {
-        setPickupTime(`Cabin ${user?.cabinNumber || 'Delivery'}`);
-    }
 
     const convert12to24 = (time12h) => {
         if (!time12h) return '';

@@ -7,9 +7,16 @@ export const CartProvider = ({ children }) => {
 
     // Load cart from local storage on init
     useEffect(() => {
-        const storedCart = localStorage.getItem('cart');
-        if (storedCart) {
-            setCartItems(JSON.parse(storedCart));
+        try {
+            const storedCart = localStorage.getItem('cart');
+            if (storedCart) {
+                const parsed = JSON.parse(storedCart);
+                if (Array.isArray(parsed)) {
+                    setCartItems(parsed);
+                }
+            }
+        } catch (e) {
+            localStorage.removeItem('cart');
         }
     }, []);
 

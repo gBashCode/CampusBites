@@ -1,21 +1,21 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 const UserSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    name: { type: String, required: true, trim: true, maxlength: 100 },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, select: false, maxlength: 128 },
     role: { type: String, enum: ['student', 'admin', 'staff', 'lecturer', 'delivery'], default: 'student' },
     cabinNumber: { type: String, default: '' },
     department: { type: String, default: '' },
     phone: { type: String, default: '' },
     isVerified: { type: Boolean, default: false },
-    otp: { type: String },
-    otpExpires: { type: Date },
-    resetPasswordOtp: { type: String },
-    resetPasswordExpires: { type: Date }
+    otp: { type: String, select: false },
+    otpExpires: { type: Date, select: false },
+    resetPasswordOtp: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false }
 }, { timestamps: true });
 
 // Hash password before saving (only when password field is new or modified)

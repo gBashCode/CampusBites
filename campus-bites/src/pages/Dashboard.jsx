@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Home, Search, ShoppingBag, User, ChefHat, Receipt } from 'lucide-react';
+import { Home, ShoppingBag, User, Receipt } from 'lucide-react';
 
 const Dashboard = () => {
     const { cartCount } = useCart();
@@ -21,12 +21,11 @@ const Dashboard = () => {
             minHeight: '100vh',
             background: '#0D0D0D',
             color: 'white',
-            paddingBottom: '80px' // Space for bottom nav
+            paddingBottom: '80px'
         }}>
-            {/* Main Content Area */}
             <main style={{
                 width: '100%',
-                maxWidth: '600px', // Mobile-first constraint
+                maxWidth: '600px',
                 margin: '0 auto',
                 minHeight: '100vh',
                 position: 'relative'
@@ -34,8 +33,7 @@ const Dashboard = () => {
                 <Outlet />
             </main>
 
-            {/* Bottom Floating Dock Navigation */}
-            <nav style={{
+            <nav aria-label="Main navigation" style={{
                 position: 'fixed',
                 bottom: '20px',
                 left: '50%',
@@ -60,6 +58,8 @@ const Dashboard = () => {
                             <Link
                                 key={item.path}
                                 to={item.path}
+                                aria-label={item.label}
+                                aria-current={active ? 'page' : undefined}
                                 style={{
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -84,9 +84,8 @@ const Dashboard = () => {
                                         }}
                                     />
 
-                                    {/* Cart Badge */}
                                     {item.badge > 0 && (
-                                        <span style={{
+                                        <span aria-label={`${item.badge} items in cart`} style={{
                                             position: 'absolute',
                                             top: '-8px',
                                             right: '-8px',
@@ -119,9 +118,8 @@ const Dashboard = () => {
                                     {item.label}
                                 </span>
 
-                                {/* Active Indicator Dot */}
                                 {active && (
-                                    <div style={{
+                                    <div aria-hidden="true" style={{
                                         width: '4px',
                                         height: '4px',
                                         background: '#E23744',

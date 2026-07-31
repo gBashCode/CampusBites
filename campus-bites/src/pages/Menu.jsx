@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
     ShoppingCart, Star, Clock, Search, TrendingUp, Sparkles, Filter,
     Plus, ChefHat, User, Mail, Phone, MapPin, Instagram, Twitter
@@ -21,7 +22,9 @@ const Menu = () => {
     const [foodTypeFilter, setFoodTypeFilter] = useState('all'); // 'all', 'veg', 'nonveg'
     const { addToCart } = useCart();
     const { user } = useAuth();
+    const toast = useToast();
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
@@ -30,23 +33,20 @@ const Menu = () => {
                 const res = await fetch(`${API_URL}/api/products`);
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
-                setProducts(data);
+                setProducts(Array.isArray(data) ? data : data.products || []);
             } catch (err) {
-                console.log('Using mock data');
-                setProducts([
-                    { _id: '1', name: 'Samosa', price: 20, category: 'Snacks', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&auto=format&fit=crop&q=60', description: 'Crispy fried pastry', isBestSeller: true },
-                    { _id: '2', name: 'Vada Pav', price: 25, category: 'Snacks', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=60', description: 'Mumbai favorite', isSpicy: true },
-                    { _id: '3', name: 'Veg Sandwich', price: 40, category: 'Snacks', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500&auto=format&fit=crop&q=60', description: 'Grilled vegetable sandwich' },
-                    { _id: '4', name: 'Masala Chai', price: 15, category: 'Beverages', image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=500&auto=format&fit=crop&q=60', description: 'Spiced Indian tea', isPopular: true },
-                    { _id: '5', name: 'Paneer Tikka', price: 120, category: 'Snacks', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=500&auto=format&fit=crop&q=60', description: 'Grilled paneer cubes', isBestSeller: true },
-                    { _id: '6', name: 'Cold Coffee', price: 45, category: 'Beverages', image: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=500&auto=format&fit=crop&q=60', description: 'Refreshing cold coffee' }
-                ]);
+                setError('Could not load menu. Please try again later.');
             } finally {
                 setLoading(false);
             }
         };
         fetchProducts();
     }, []);
+
+    const handleAddToCart = (product) => {
+        addToCart(product);
+        toast.success(`${product.name} added to cart`);
+    };
 
     const categories = [
         { name: 'All', image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&h=200&fit=crop' },
@@ -81,6 +81,38 @@ const Menu = () => {
                 }
             `}</style>
             <Sparkles style={{ animation: 'spin-slow 3s linear infinite' }} size={48} color="#E23744" />
+        </div>
+    );
+
+    if (error) return (
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#9CA3AF',
+            textAlign: 'center',
+            padding: '2rem'
+        }}>
+            <ChefHat size={48} color="#E23744" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'white' }}>Oops!</h3>
+            <p>{error}</p>
+            <button
+                onClick={() => window.location.reload()}
+                style={{
+                    marginTop: '1rem',
+                    background: '#E23744',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.8rem 1.5rem',
+                    borderRadius: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                }}
+            >
+                Try Again
+            </button>
         </div>
     );
 
@@ -303,6 +335,8 @@ const Menu = () => {
                     <button
                         onClick={() => setFoodTypeFilter('all')}
                         className="food-type-btn glass-panel"
+                        aria-label="Show all items"
+                        aria-pressed={foodTypeFilter === 'all'}
                         style={{
                             flex: 1,
                             padding: '14px 20px',
@@ -330,6 +364,8 @@ const Menu = () => {
                     <button
                         onClick={() => setFoodTypeFilter('veg')}
                         className="food-type-btn glass-panel"
+                        aria-label="Show vegetarian items only"
+                        aria-pressed={foodTypeFilter === 'veg'}
                         style={{
                             flex: 1,
                             padding: '14px 20px',
@@ -373,6 +409,8 @@ const Menu = () => {
                     <button
                         onClick={() => setFoodTypeFilter('nonveg')}
                         className="food-type-btn glass-panel"
+                        aria-label="Show non-vegetarian items only"
+                        aria-pressed={foodTypeFilter === 'nonveg'}
                         style={{
                             flex: 1,
                             padding: '14px 20px',
@@ -446,6 +484,7 @@ const Menu = () => {
                                 <img
                                     src={product.image}
                                     alt={product.name}
+                                    onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%231a1a1a" width="100" height="100"/><text fill="%23555" font-family="sans-serif" font-size="14" text-anchor="middle" x="50" y="55">No Image</text></svg>'; }}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
 
@@ -517,7 +556,8 @@ const Menu = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: '1.2rem', fontWeight: 900, color: 'white' }}>₹{product.price}</span>
                                     <button
-                                        onClick={() => addToCart(product)}
+                                        onClick={() => handleAddToCart(product)}
+                                        aria-label={`Add ${product.name} to cart`}
                                         style={{
                                             background: '#E23744',
                                             color: 'white',

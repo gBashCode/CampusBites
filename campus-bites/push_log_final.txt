@@ -1,2 +1,0 @@
-To https://github.com/akashhg2007/project2.0.git
-   ba88195..3cad59b  main -> main

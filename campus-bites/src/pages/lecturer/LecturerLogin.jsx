@@ -33,7 +33,6 @@ const LecturerLogin = () => {
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', position: 'relative', overflow: 'hidden', color: 'white' }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
                 * { box-sizing: border-box; }
                 @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(5deg)} }
                 @keyframes pulse { 0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.5;transform:scale(1.05)} }

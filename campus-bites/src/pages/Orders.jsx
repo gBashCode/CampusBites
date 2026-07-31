@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
     Clock, CheckCircle, Package, ChefHat, RefreshCw,
-    Calendar, ChevronRight, ShoppingBag, Utensils
+    Calendar, ChevronRight, ShoppingBag, Utensils, AlertCircle
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 import API_URL from '../apiConfig';
 
@@ -15,9 +16,11 @@ const Orders = () => {
     const { addToCart } = useCart();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const toast = useToast();
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         if (!user?.id) {
             setLoading(false);
             setRefreshing(false);
@@ -30,22 +33,27 @@ const Orders = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                // Sort by date (newest first)
-                setOrders(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+                const orderList = Array.isArray(data) ? data : data.orders || [];
+                setOrders(orderList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+                setError(null);
+            } else {
+                setError('Failed to load orders');
             }
         } catch (err) {
-            console.error('Error fetching orders', err);
+            setError('Could not connect to server');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [user?.id, token]);
 
     useEffect(() => {
         if (user?.id) {
             fetchOrders();
+            const interval = setInterval(fetchOrders, 15000);
+            return () => clearInterval(interval);
         }
-    }, [user?.id]);
+    }, [user?.id, fetchOrders]);
 
     const handleRefresh = () => {
         setRefreshing(true);
@@ -53,17 +61,19 @@ const Orders = () => {
     };
 
     const handleReorder = (order) => {
-        // Simple reorder logic: add items to cart
+        const hasUnavailable = order.items.some(item => item.product && item.product.isAvailable === false);
+        if (hasUnavailable) {
+            toast.error('Some items are no longer available');
+            return;
+        }
         order.items.forEach(item => {
             if (item.product) {
-                // We add each item. Note: This might stack with existing items.
-                // For a more robust reorder, we might want to clear cart first or ask user.
-                // For now, let's just add them.
                 for (let i = 0; i < item.quantity; i++) {
                     addToCart(item.product);
                 }
             }
         });
+        toast.success('Items added to cart');
         navigate('/dashboard/cart');
     };
 
@@ -129,6 +139,37 @@ const Orders = () => {
             <div style={{ textAlign: 'center' }}>
                 <RefreshCw className="animate-spin" size={32} color="#E23744" />
                 <p style={{ marginTop: '1rem' }}>Loading your orders...</p>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div style={{
+            minHeight: '80vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#9CA3AF'
+        }}>
+            <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <AlertCircle size={48} color="#E23744" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                <h3 style={{ fontSize: '1.2rem', color: 'white', marginBottom: '0.5rem' }}>Something went wrong</h3>
+                <p>{error}</p>
+                <button
+                    onClick={handleRefresh}
+                    style={{
+                        marginTop: '1rem',
+                        background: '#E23744',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.8rem 1.5rem',
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                    }}
+                >
+                    Retry
+                </button>
             </div>
         </div>
     );

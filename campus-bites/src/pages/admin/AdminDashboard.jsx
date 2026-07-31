@@ -1,7 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+
+class ErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'white' }}>
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>
+                    <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>An unexpected error occurred.</p>
+                    <button
+                        onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+                        style={{
+                            background: '#E23744', color: 'white', border: 'none',
+                            padding: '0.8rem 1.5rem', borderRadius: '12px', fontWeight: 600, cursor: 'pointer'
+                        }}
+                    >
+                        Reload Page
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
@@ -219,7 +249,9 @@ const AdminDashboard = () => {
                 {/* Main Content */}
                 <main style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
                     <div className="glass-content">
-                        <Outlet />
+                        <ErrorBoundary>
+                            <Outlet />
+                        </ErrorBoundary>
                     </div>
                 </main>
             </div>

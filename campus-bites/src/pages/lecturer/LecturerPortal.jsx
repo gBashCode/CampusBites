@@ -86,7 +86,6 @@ const LecturerPortal = () => {
     return (
         <div style={{ minHeight: '100vh', background: '#0D0D0D', color: 'white', paddingBottom: 100, fontFamily: "'Inter',sans-serif" }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
                 * { box-sizing: border-box; }
                 @keyframes slideDown { from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)} }
                 @keyframes fadeIn { from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)} }

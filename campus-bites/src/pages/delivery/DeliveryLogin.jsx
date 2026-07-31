@@ -8,8 +8,8 @@ const DeliveryLogin = () => {
     const [mode, setMode] = useState('login');
     const [formData, setFormData] = useState({ 
         name: '', 
-        email: 'delivery@bites.com', 
-        password: 'delivery123', 
+        email: '', 
+        password: '', 
         phone: '' 
     });
     const [loading, setLoading] = useState(false);
@@ -36,7 +36,6 @@ const DeliveryLogin = () => {
     return (
         <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', position: 'relative', overflow: 'hidden', color: 'white' }}>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
                 * { box-sizing: border-box; }
                 @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(5deg)} }
                 @keyframes pulse { 0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.5;transform:scale(1.05)} }
@@ -113,7 +112,7 @@ const DeliveryLogin = () => {
                         )}
                         {mode === 'login' && (
                             <div className="ai d4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '0.75rem', padding: '0.7rem 1rem', fontSize: '0.8rem', color: '#FDE68A', marginBottom: '0.5rem' }}>
-                                💡 Default: <b>delivery@bites.com</b> / <b>delivery123</b>
+                                Use your registered delivery account credentials
                             </div>
                         )}
                         <button className="del-btn ai d4" type="submit" disabled={loading}>

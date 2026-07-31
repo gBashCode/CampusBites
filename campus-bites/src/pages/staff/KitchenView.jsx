@@ -7,6 +7,8 @@ import API_URL from '../../apiConfig';
 const KitchenView = () => {
     const [orders, setOrders] = useState([]);
     const [filter, setFilter] = useState('All');
+    const [error, setError] = useState(null);
+    const [confirmAction, setConfirmAction] = useState(null);
     const { logout, user, token } = useAuth();
 
     const fetchOrders = async () => {
@@ -20,10 +22,13 @@ const KitchenView = () => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setOrders(data);
+                setOrders(Array.isArray(data) ? data : data.orders || []);
+                setError(null);
+            } else {
+                setError('Failed to load orders');
             }
         } catch (err) {
-            console.error('Fetch error', err);
+            setError('Could not connect to server');
         }
     };
 
@@ -53,7 +58,13 @@ const KitchenView = () => {
             fetchOrders();
         } catch (err) {
             alert('Update failed');
+        } finally {
+            setConfirmAction(null);
         }
+    };
+
+    const handleStatusAction = (orderId, newStatus, label) => {
+        setConfirmAction({ orderId, newStatus, label });
     };
 
     const stats = {
@@ -190,32 +201,53 @@ const KitchenView = () => {
             </div>
 
             <div style={{ marginTop: 'auto' }}>
-                {order.status === 'pending' && (
-                    <button
-                        onClick={() => updateStatus(order._id, 'preparing')}
-                        className="btn-action"
-                        style={{ backgroundColor: '#E23744', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(226, 55, 68, 0.2)' }}
-                    >
-                        Accept & Start Preparing
-                    </button>
-                )}
-                {order.status === 'preparing' && (
-                    <button
-                        onClick={() => updateStatus(order._id, 'ready')}
-                        className="btn-action"
-                        style={{ backgroundColor: '#F59E0B', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(245, 158, 11, 0.2)' }}
-                    >
-                        Mark as Ready to Pickup
-                    </button>
-                )}
-                {order.status === 'ready' && (
-                    <button
-                        onClick={() => updateStatus(order._id, 'completed')}
-                        className="btn-action"
-                        style={{ backgroundColor: '#22C55E', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
-                    >
-                        Handover & Complete
-                    </button>
+                {confirmAction?.orderId === order._id ? (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            onClick={() => updateStatus(order._id, confirmAction.newStatus)}
+                            className="btn-action"
+                            style={{ flex: 2, backgroundColor: '#22C55E', color: 'white', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
+                        >
+                            Confirm
+                        </button>
+                        <button
+                            onClick={() => setConfirmAction(null)}
+                            className="btn-action"
+                            style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', color: '#9CA3AF' }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        {order.status === 'pending' && (
+                            <button
+                                onClick={() => handleStatusAction(order._id, 'preparing', 'Accept & Start Preparing')}
+                                className="btn-action"
+                                style={{ backgroundColor: '#E23744', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(226, 55, 68, 0.2)' }}
+                            >
+                                Accept & Start Preparing
+                            </button>
+                        )}
+                        {order.status === 'preparing' && (
+                            <button
+                                onClick={() => handleStatusAction(order._id, 'ready', 'Mark as Ready')}
+                                className="btn-action"
+                                style={{ backgroundColor: '#F59E0B', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(245, 158, 11, 0.2)' }}
+                            >
+                                Mark as Ready to Pickup
+                            </button>
+                        )}
+                        {order.status === 'ready' && (
+                            <button
+                                onClick={() => handleStatusAction(order._id, 'completed', 'Complete Order')}
+                                className="btn-action"
+                                style={{ backgroundColor: '#22C55E', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
+                            >
+                                Handover & Complete
+                            </button>
+                        )}
+                    </>
                 )}
                 {order.status === 'completed' && (
                     <div style={{
@@ -408,6 +440,35 @@ const KitchenView = () => {
             </header>
 
             <div className="main-container">
+                {error && (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        background: 'rgba(239, 68, 68, 0.05)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        marginBottom: '2rem'
+                    }}>
+                        <ChefHat size={36} style={{ color: '#E23744', opacity: 0.5, marginBottom: '0.5rem' }} />
+                        <p style={{ color: '#F87171', fontWeight: 600 }}>{error}</p>
+                        <button
+                            onClick={fetchOrders}
+                            style={{
+                                marginTop: '1rem',
+                                background: '#E23744',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.6rem 1.2rem',
+                                borderRadius: '10px',
+                                fontWeight: 600,
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
                 {/* Stats Dashboard */}
                 <div className="stats-grid">
                     <div className="stat-card">

@@ -8,6 +8,8 @@ const ManageMenu = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [fetchLoading, setFetchLoading] = useState(true);
+    const [confirmDelete, setConfirmDelete] = useState(null);
     const { user, token } = useAuth();
 
     // Form State
@@ -16,12 +18,15 @@ const ManageMenu = () => {
     });
 
     const fetchProducts = async () => {
+        setFetchLoading(true);
         try {
             const res = await fetch(`${API_URL}/api/products`);
             const data = await res.json();
-            setProducts(data);
+            setProducts(Array.isArray(data) ? data : data.products || []);
         } catch (err) {
             console.error('Failed to fetch products');
+        } finally {
+            setFetchLoading(false);
         }
     };
 
@@ -41,8 +46,6 @@ const ManageMenu = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this item?')) return;
-
         if (!user?.id) {
             alert('Authentication error. Please log in again.');
             return;
@@ -59,6 +62,8 @@ const ManageMenu = () => {
             }
         } catch (err) {
             console.error('Delete error:', err);
+        } finally {
+            setConfirmDelete(null);
         }
     };
 
@@ -229,6 +234,20 @@ const ManageMenu = () => {
 
             {/* Table Area */}
             <div style={{ overflowX: 'hidden' }}>
+                {fetchLoading ? (
+                    <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#6B7280' }}>
+                        <div style={{
+                            width: '32px', height: '32px',
+                            border: '3px solid rgba(255,255,255,0.1)',
+                            borderTop: '3px solid #E23744',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite',
+                            margin: '0 auto 1rem'
+                        }} />
+                        <p>Loading menu items...</p>
+                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    </div>
+                ) : (
                 <table className="admin-table">
                     <thead>
                         <tr>
@@ -276,13 +295,31 @@ const ManageMenu = () => {
                                 <td data-label="Actions" style={{ textAlign: 'right' }}>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                         <button className="action-btn" onClick={() => handleOpenModal(product)} title="Edit"><Edit2 size={16} /></button>
-                                        <button className="action-btn delete" onClick={() => handleDelete(product._id)} title="Delete"><Trash2 size={16} /></button>
+                                        {confirmDelete === product._id ? (
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                <button
+                                                    onClick={() => handleDelete(product._id)}
+                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: '#EF4444', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                                >
+                                                    Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmDelete(null)}
+                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button className="action-btn delete" onClick={() => setConfirmDelete(product._id)} title="Delete"><Trash2 size={16} /></button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                )}
             </div>
 
             {/* Modal */}
@@ -325,6 +362,16 @@ const ManageMenu = () => {
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', marginBottom: '6px', textTransform: 'uppercase' }}>Image URL</label>
                                 <input className="input-field-dark" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
+                                {formData.image && (
+                                    <div style={{ marginTop: '8px', width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <img
+                                            src={formData.image}
+                                            alt="Preview"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Veg/Non-Veg Selection */}

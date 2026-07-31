@@ -333,7 +333,7 @@ const DeliveryPortal = () => {
                     }}>
                         <RefreshCw size={18} /> <span>Sync</span>
                     </button>
-                    <button onClick={() => { logout(); navigate('/login'); }} style={{
+                    <button onClick={() => { logout(); navigate('/'); }} style={{
                         background: 'rgba(239, 68, 68, 0.1)',
                         border: '1px solid rgba(239, 68, 68, 0.2)',
                         color: '#F87171',

@@ -21,10 +21,10 @@ const Login = () => {
 
     useEffect(() => {
         if (user) {
-            if (user.role === 'admin') navigate('/admin/menu');
-            else if (user.role === 'staff') navigate('/staff/kitchen');
-            else if (user.role === 'lecturer') navigate('/lecturer/menu');
-            else navigate('/dashboard/menu');
+            if (user.role === 'admin') navigate('/admin/menu', { replace: true });
+            else if (user.role === 'staff') navigate('/staff/kitchen', { replace: true });
+            else if (user.role === 'lecturer') navigate('/lecturer/menu', { replace: true });
+            else navigate('/dashboard/menu', { replace: true });
         }
     }, [user, navigate]);
 
@@ -44,9 +44,7 @@ const Login = () => {
 
             if (res.ok) {
                 login(data.user, data.token);
-                if (data.user.role === 'admin') navigate('/admin/menu');
-                else if (data.user.role === 'staff') navigate('/staff/kitchen');
-                else navigate('/dashboard/menu');
+                // Navigation handled by useEffect above
             } else {
                 setError(data.message || 'Login failed');
             }
@@ -97,9 +95,7 @@ const Login = () => {
 
                 if (res.ok) {
                     login(data.user, data.token);
-                    if (data.user.role === 'admin') navigate('/admin/menu');
-                    else if (data.user.role === 'staff') navigate('/staff/kitchen');
-                    else navigate('/dashboard/menu');
+                    // Navigation handled by useEffect above
                 } else {
                     setError(data.message || 'Google Login Failed');
                 }
@@ -408,6 +404,10 @@ const Login = () => {
                             </div>
                             <div
                                 onClick={() => setShowPassword(!showPassword)}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPassword(!showPassword); }}
                                 style={{
                                     position: 'absolute',
                                     right: '1rem',
