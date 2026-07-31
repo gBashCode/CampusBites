@@ -8,7 +8,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/campus-bites/dist/index.html"
+      "destination": "/index.html"
     }
   ],
   "functions": {
