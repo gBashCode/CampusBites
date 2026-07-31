@@ -15,7 +15,8 @@ const UserSchema = new mongoose.Schema({
     otp: { type: String, select: false },
     otpExpires: { type: Date, select: false },
     resetPasswordOtp: { type: String, select: false },
-    resetPasswordExpires: { type: Date, select: false }
+    resetPasswordExpires: { type: Date, select: false },
+    fcmTokens: [{ type: String, select: false }]
 }, { timestamps: true });
 
 // Hash password before saving (only when password field is new or modified)

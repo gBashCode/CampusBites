@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { verifyUser, checkRole } = require('../middleware/auth');
 const { validateObjectId } = require('../utils/validators');
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
+const { sendPushToUser } = require('../utils/firebase');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
@@ -204,6 +206,38 @@ router.put('/:id/status', verifyUser, checkRole(['admin', 'staff']), async (req,
             }
         }
 
+        // Send FCM push notification
+        if (order?.user?._id) {
+            try {
+                const fullUser = await User.findById(order.user._id).select('+fcmTokens');
+                if (fullUser) {
+                    const statusMsg = {
+                        preparing: { title: 'Order Being Prepared! 👨‍🍳', body: 'Your meal is now being prepared.' },
+                        ready: { title: 'Order Ready! 📦', body: order.cabinNumber ? `Ready for delivery to Cabin ${order.cabinNumber}` : 'Your order is ready for pickup!' },
+                        completed: { title: 'Order Complete! ✅', body: 'Your order has been handed over. Enjoy!' },
+                        cancelled: { title: 'Order Cancelled ❌', body: 'Your order has been cancelled.' },
+                    };
+
+                    const msg = statusMsg[status];
+                    if (msg) {
+                        const invalidTokens = await sendPushToUser(fullUser, msg.title, msg.body, {
+                            tag: `order-${order._id}`,
+                            link: '/dashboard/orders',
+                        });
+
+                        // Clean up invalid tokens
+                        if (invalidTokens && invalidTokens.length > 0) {
+                            await User.findByIdAndUpdate(fullUser._id, {
+                                $pull: { fcmTokens: { $in: invalidTokens } }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('FCM notification error:', e.message);
+            }
+        }
+
         res.json(order);
     } catch (err) {
         console.error('Error updating order status:', err.message);
@@ -350,6 +384,27 @@ router.post('/verify', verifyUser, async (req, res) => {
             const message = `🍔 *Campus Bites - Order Placed!*\n\nHi ${populatedOrder.user.name || 'Customer'},\nYour order has been placed successfully!\n\n*Order ID*: #${populatedOrder._id.toString().slice(-6).toUpperCase()}\n*Items*:\n${itemsList}\n*Total Paid*: ₹${populatedOrder.totalAmount}\n*Delivery/Pickup Slot*: ${pickupText}\n\nWe will notify you when preparation starts. Thank you!`;
 
             sendWhatsAppMessage(populatedOrder.user.phone, message).catch(() => {});
+        }
+
+        // Send FCM push notification for order placed
+        try {
+            const orderUser = await User.findById(req.user._id).select('+fcmTokens');
+            if (orderUser) {
+                const itemsList = validatedItems.map(i => i.quantity + 'x item').join(', ');
+                const invalidTokens = await sendPushToUser(
+                    orderUser,
+                    'Order Placed! 🍔',
+                    `Your order has been placed. Total: ₹${totalAmount}`,
+                    { tag: `order-${order._id}`, link: '/dashboard/orders' }
+                );
+                if (invalidTokens && invalidTokens.length > 0) {
+                    await User.findByIdAndUpdate(orderUser._id, {
+                        $pull: { fcmTokens: { $in: invalidTokens } }
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('FCM order placed notification error:', e.message);
         }
 
         return res.status(200).json({ message: "Payment verified successfully", order });

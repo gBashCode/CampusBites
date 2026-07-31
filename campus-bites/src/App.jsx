@@ -3,6 +3,7 @@ import SplashScreen from './components/SplashScreen'
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { NotificationProvider } from './context/NotificationContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -52,6 +53,7 @@ function App() {
 
     return (
         <AuthProvider>
+            <NotificationProvider>
             <CartProvider>
                 <Router>
                     <Routes>
@@ -112,6 +114,7 @@ function App() {
                     </Routes>
                 </Router>
             </CartProvider>
+            </NotificationProvider>
         </AuthProvider>
     )
 }

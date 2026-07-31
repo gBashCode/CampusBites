@@ -30,3 +30,5 @@ services:
         sync: false
       - key: WHATSAPP_ENABLED
         value: "false"
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false

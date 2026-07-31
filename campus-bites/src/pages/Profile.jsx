@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
 import {
     User, Mail, Lock, Phone, MapPin, CreditCard,
@@ -9,8 +10,10 @@ import {
 
 const Profile = () => {
     const { user, logout } = useAuth();
+    const { permission, enableNotifications, sendTestNotification } = useNotifications();
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
+    const [enabling, setEnabling] = useState(false);
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
@@ -45,13 +48,22 @@ const Profile = () => {
         }
     };
 
+    const handleEnableNotifications = async () => {
+        setEnabling(true);
+        const success = await enableNotifications();
+        setEnabling(false);
+        if (!success) {
+            alert('Could not enable notifications. Please check your browser settings.');
+        }
+    };
+
     const accountSections = [
         {
             title: 'Account Settings',
             items: [
                 { icon: User, label: 'Edit Profile', action: () => setIsEditing(true) },
                 { icon: Lock, label: 'Change Password', action: () => alert('Change password feature coming soon') },
-                { icon: Bell, label: 'Notifications', action: () => alert('Notification settings coming soon') },
+                { icon: Bell, label: permission === 'granted' ? 'Notifications (Enabled)' : 'Enable Notifications', action: permission === 'granted' ? sendTestNotification : handleEnableNotifications },
                 { icon: Shield, label: 'Privacy & Security', action: () => alert('Privacy settings coming soon') }
             ]
         },

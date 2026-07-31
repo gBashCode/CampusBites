@@ -33,3 +33,7 @@ yarn-error.log*
 /OpenWA/data
 /OpenWA/config.json
 .vercel
+
+# Firebase service account
+serviceAccountKey.json
+.firebase-sa-tmp.json
