@@ -8,13 +8,23 @@ import { ToastProvider } from './context/ToastContext';
 
 import { SpeedInsights } from "@vercel/speed-insights/react"
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+const AppTree = () => (
+    <ToastProvider>
+        <App />
+        <SpeedInsights />
+    </ToastProvider>
+);
+
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
-            <ToastProvider>
-                <App />
-                <SpeedInsights />
-            </ToastProvider>
-        </GoogleOAuthProvider>
+        {googleClientId ? (
+            <GoogleOAuthProvider clientId={googleClientId}>
+                <AppTree />
+            </GoogleOAuthProvider>
+        ) : (
+            <AppTree />
+        )}
     </React.StrictMode>,
 )
