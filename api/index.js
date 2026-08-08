@@ -1,27 +1,22 @@
 const path = require('path');
 
-// Load env vars — gracefully skip if .env not found (Vercel uses env vars)
 try { require('dotenv').config({ path: path.join(__dirname, '..', 'campus-bites', 'server', '.env') }); } catch(e) {}
 
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
 
-// Trust first proxy (required for rate limiter behind Vercel)
 app.set('trust proxy', 1);
 
-// ─── Security Headers (Helmet) ──────────────────────────────────────────────
 app.use(helmet({
     crossOriginResourcePolicy: false,
     contentSecurityPolicy: false,
     hsts: { maxAge: 31536000, includeSubDomains: true }
 }));
 
-// ─── CORS — Strict Origin Allowlist ─────────────────────────────────────────
 const allowedOrigins = process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
     : [];
@@ -39,41 +34,47 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
-// ─── Rate Limiting ──────────────────────────────────────────────────────────
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
-    message: "Too many requests from this IP, please try again after 15 minutes"
+    message: { message: 'Too many requests, please try again later' }
 });
 app.use('/api/', apiLimiter);
 
-// ─── Database Connection ────────────────────────────────────────────────────
-const mongoURI = (process.env.MONGO_URI || 'mongodb://localhost:27017/campus-bites').trim();
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { message: 'Too many authentication attempts' }
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
 
-if (mongoURI.startsWith('mongodb://') || mongoURI.startsWith('mongodb+srv://')) {
-    mongoose.connect(mongoURI, {
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-    })
-        .then(() => console.log('MongoDB Connected Successfully'))
-        .catch(err => console.error('MongoDB Connection Error:', err.message));
-}
-
-// ─── Routes ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    const dbStatus = mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected';
-    res.json({ message: 'Campus Bites API is running', dbStatus, timestamp: new Date() });
+    res.json({
+        status: 'ok',
+        service: 'Campus Bites API',
+        timestamp: new Date().toISOString(),
+    });
 });
 
-const authRoutes = require('../campus-bites/server/routes/auth');
-const productRoutes = require('../campus-bites/server/routes/products');
-const orderRoutes = require('../campus-bites/server/routes/orders');
+app.use('/api/auth', require('../campus-bites/server/routes/auth'));
+app.use('/api/products', require('../campus-bites/server/routes/products'));
+app.use('/api/orders', require('../campus-bites/server/routes/orders'));
+app.use('/api/notifications', require('../campus-bites/server/routes/notifications'));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
+app.use((req, res) => {
+    res.status(404).json({ message: 'Route not found' });
+});
 
-// Export for Vercel serverless
+app.use((err, req, res, _next) => {
+    console.error('Unhandled error:', err);
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({ message: 'Origin not allowed by CORS' });
+    }
+    res.status(500).json({ message: 'Internal server error' });
+});
+
 module.exports = app;
