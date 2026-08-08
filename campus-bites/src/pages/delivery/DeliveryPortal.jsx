@@ -67,16 +67,16 @@ const DeliveryPortal = () => {
 
     const OrderCard = ({ order }) => (
         <div key={order._id} className="glass-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--glass-border)' }}>
                 <div>
-                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>DELIVERY TICKET</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>DELIVERY TICKET</p>
                     <p style={{ fontWeight: 800, fontSize: '1.25rem', color: 'white', margin: 0 }}>#{order._id.slice(-6).toUpperCase()}</p>
-                    <p style={{ fontSize: '0.7rem', color: '#9CA3AF', margin: '4px 0 0 0', fontWeight: 600 }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', margin: '4px 0 0 0', fontWeight: 600 }}>
                         Ordered: {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.65rem', color: '#8B949E', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>STATUS</p>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: '0 0 2px 0', letterSpacing: '1px', fontWeight: 700 }}>STATUS</p>
                     <div style={{ marginTop: '4px' }}>
                         <StatusChip status={order.status} />
                     </div>
@@ -88,57 +88,57 @@ const DeliveryPortal = () => {
                 <div style={{ 
                     background: 'rgba(255,255,255,0.03)', 
                     border: '1px solid rgba(255,255,255,0.06)', 
-                    borderRadius: '12px', 
-                    padding: '12px', 
-                    marginBottom: '16px',
+                    borderRadius: 'var(--radius-md)', 
+                    padding: 'var(--space-sm)', 
+                    marginBottom: 'var(--space-md)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '10px'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin size={18} color="#F59E0B" />
+                        <MapPin size={18} color="var(--warning)" />
                         <span style={{ fontSize: '1rem', fontWeight: 800, color: '#FDE68A' }}>
                             {order.cabinNumber ? `Cabin ${order.cabinNumber}` : 'Self Pickup'}
                         </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>👤</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderTop: '1px solid var(--glass-border)', paddingTop: '10px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--warning-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>👤</div>
                         <div style={{ flex: 1 }}>
                             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white' }}>{order.user?.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{order.user?.department || 'Student'}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{order.user?.department || 'Student'}</div>
                         </div>
                         {order.user?.phone && (
                             <a href={`tel:${order.user.phone}`} style={{ 
-                                background: 'rgba(34, 197, 94, 0.1)', 
-                                border: '1px solid rgba(34, 197, 94, 0.2)', 
+                                background: 'var(--success-surface)', 
+                                border: '1px solid var(--success-border)', 
                                 padding: '6px', 
-                                borderRadius: '8px',
+                                borderRadius: 'var(--radius-sm)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}>
-                                <Phone size={16} color="#22C55E" />
+                                <Phone size={16} color="var(--success)" />
                             </a>
                         )}
                     </div>
                 </div>
 
-                <p style={{ fontSize: '0.7rem', color: '#8B949E', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Contents:</p>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '1px' }}>Order Contents:</p>
                 {order.items.map((item, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '0.75rem' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '0.75rem' }}>
                         <div style={{
                             width: '24px',
                             height: '24px',
                             borderRadius: '6px',
-                            background: 'rgba(245, 158, 11, 0.1)',
+                            background: 'var(--warning-surface)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: '0.8rem',
                             fontWeight: 800,
-                            color: '#F59E0B',
-                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                            color: 'var(--warning)',
+                            border: '1px solid var(--warning-border)'
                         }}>
                             {item.quantity}
                         </div>
@@ -151,7 +151,7 @@ const DeliveryPortal = () => {
                 {order.status === 'ready' ? (
                     <PrimaryButton
                         onClick={() => updateStatus(order._id, 'completed')}
-                        style={{ backgroundColor: '#22C55E', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
+                        style={{ backgroundColor: 'var(--success)', color: 'white', width: '100%', boxShadow: '0 8px 20px rgba(34, 197, 94, 0.2)' }}
                     >
                         Mark as Delivered
                     </PrimaryButton>
@@ -159,9 +159,9 @@ const DeliveryPortal = () => {
                     <div style={{
                         textAlign: 'center',
                         padding: '0.8rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '12px',
-                        color: '#9CA3AF',
+                        background: 'var(--surface)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--text-secondary)',
                         fontWeight: 600,
                         fontSize: '0.85rem'
                     }}>
@@ -173,108 +173,7 @@ const DeliveryPortal = () => {
     );
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#0D0D0D', color: 'white', position: 'relative', overflowX: 'hidden' }}>
-            <style>{`
-                .floating-emoji {
-                    position: absolute;
-                    font-size: 3.5rem;
-                    opacity: 0.1;
-                    pointer-events: none;
-                    animation: float 8s ease-in-out infinite;
-                    z-index: 1;
-                }
-                .glass-card {
-                    background: rgba(26, 26, 28, 0.95);
-                    border-radius: 1.5rem;
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    padding: 1.5rem;
-                    transition: all 0.3s ease;
-                    position: relative;
-                    z-index: 10;
-                    display: flex;
-                    flex-direction: column;
-                }
-                .glass-card:hover {
-                    border-color: rgba(245, 158, 11, 0.3);
-                    transform: translateY(-5px);
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-                }
-                .stat-card {
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                    border-radius: 1.25rem;
-                    padding: 1.5rem;
-                    text-align: center;
-                    transition: all 0.3s ease;
-                }
-                .stat-card:hover {
-                    background: rgba(255, 255, 255, 0.05);
-                }
-                .btn-action {
-                    padding: 0.8rem 1.2rem;
-                    border-radius: 12px;
-                    border: none;
-                    font-weight: 700;
-                    cursor: pointer;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    font-size: 0.95rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                }
-                .btn-action:hover {
-                    filter: brightness(1.1);
-                    transform: scale(1.02);
-                }
-                .filter-pill {
-                    padding: 0.6rem 1.5rem;
-                    border-radius: 12px;
-                    border: 1px solid rgba(255,255,255,0.1);
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                    white-space: nowrap;
-                }
-                .section-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    font-size: 1.25rem;
-                    font-weight: 800;
-                    margin: 3rem 0 1.5rem 0;
-                    color: white;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                }
-                .orders-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-                    gap: 2rem;
-                }
-                .stats-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                    gap: 1.5rem;
-                    margin-bottom: 3rem;
-                }
-                .main-container {
-                    max-width: 1400px;
-                    margin: 0 auto;
-                    padding: 2.5rem;
-                }
-                
-                @media (max-width: 768px) {
-                    .main-container { padding: 1.5rem; }
-                    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-                    .orders-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-                    .header-title { font-size: 1.2rem !important; }
-                    .header-subtitle { font-size: 0.7rem !important; }
-                    .filter-bar { overflow-x: auto; padding-bottom: 5px; }
-                    .section-title { font-size: 1rem; margin: 2rem 0 1rem 0; }
-                }
-            `}</style>
-
+        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-deep)', color: 'white', position: 'relative', overflowX: 'hidden' }}>
             <div className="floating-emoji" style={{ top: '10%', right: '5%' }}>🚴</div>
             <div className="floating-emoji" style={{ top: '60%', left: '3%' }}>📦</div>
             <div className="floating-emoji" style={{ bottom: '10%', right: '15%' }}>🚀</div>
@@ -282,7 +181,7 @@ const DeliveryPortal = () => {
             <header style={{
                 background: '#111111',
                 padding: '1rem 1.5rem',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                borderBottom: '1px solid var(--glass-border)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -291,9 +190,9 @@ const DeliveryPortal = () => {
                 zIndex: 100,
                 backdropFilter: 'blur(10px)'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                     <div style={{
-                        background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                        background: 'linear-gradient(135deg, var(--warning) 0%, #D97706 100%)',
                         padding: '8px',
                         borderRadius: '10px',
                         boxShadow: '0 8px 20px rgba(245, 158, 11, 0.3)'
@@ -302,17 +201,17 @@ const DeliveryPortal = () => {
                     </div>
                     <div>
                         <h1 className="header-title" style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>Delivery</h1>
-                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: '#8B949E', margin: 0 }}>Portal v2.0</p>
+                        <p className="header-subtitle" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Portal v2.0</p>
                     </div>
                 </div>
 
                 <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <button onClick={fetchOrders} style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--glass-border)',
                         color: 'white',
                         padding: '0.6rem 1rem',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--radius-md)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -321,14 +220,13 @@ const DeliveryPortal = () => {
                     }}>
                         <RefreshCw size={18} /> <span>Sync</span>
                     </button>
-                    <button onClick={() => { logout(); navigate('/'); }} style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                        color: '#F87171',
+                    <button onClick={() => { logout(); navigate('/'); }} className="btn-icon" style={{
+                        background: 'var(--danger-surface)',
+                        border: '1px solid var(--danger-border)',
+                        color: 'var(--danger)',
                         padding: '0.6rem 1rem',
-                        borderRadius: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer'
+                        borderRadius: 'var(--radius-md)',
+                        fontWeight: 700
                     }}><LogOut size={18} /></button>
                 </div>
             </header>
@@ -336,16 +234,16 @@ const DeliveryPortal = () => {
             <div className="main-container">
                 <div className="stats-grid">
                     <div className="stat-card">
-                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>QUEUED</p>
-                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#F59E0B' }}>{stats.pending + stats.preparing}</p>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>QUEUED</p>
+                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--warning)' }}>{stats.pending + stats.preparing}</p>
                     </div>
-                    <div className="stat-card" style={{ borderTop: '4px solid #22C55E' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>READY TO GO</p>
-                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#22C55E' }}>{stats.ready}</p>
+                    <div className="stat-card" style={{ borderTop: '4px solid var(--success)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>READY TO GO</p>
+                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--success)' }}>{stats.ready}</p>
                     </div>
-                    <div className="stat-card" style={{ borderTop: '4px solid #8B949E' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#8B949E', marginBottom: '0.5rem', fontWeight: 600 }}>DELIVERED</p>
-                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: '#9CA3AF' }}>{stats.completed}</p>
+                    <div className="stat-card" style={{ borderTop: '4px solid var(--text-muted)' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600 }}>DELIVERED</p>
+                        <p style={{ fontSize: '2rem', fontWeight: 800, margin: 0, color: 'var(--text-secondary)' }}>{stats.completed}</p>
                     </div>
                 </div>
 
@@ -354,12 +252,7 @@ const DeliveryPortal = () => {
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
-                            className="filter-pill"
-                            style={{
-                                backgroundColor: filter === f ? '#F59E0B' : 'rgba(255,255,255,0.05)',
-                                color: filter === f ? 'black' : '#9CA3AF',
-                                borderColor: filter === f ? '#F59E0B' : 'rgba(255,255,255,0.1)'
-                            }}
+                            className={`filter-pill ${filter === f ? 'filter-pill-active' : ''}`}
                         >
                             {f}
                         </button>
@@ -369,14 +262,14 @@ const DeliveryPortal = () => {
                 {filter === 'All' ? (
                     <>
                         {stats.ready > 0 && (
-                            <div className="section-title"><CheckCircle2 color="#22C55E" size={20} /> Ready for Delivery ({stats.ready})</div>
+                            <div className="section-title"><CheckCircle2 color="var(--success)" size={20} /> Ready for Delivery ({stats.ready})</div>
                         )}
                         <div className="orders-grid">
                             {orders.filter(o => o.status === 'ready').map(o => <OrderCard key={o._id} order={o} />)}
                         </div>
 
                         {(stats.pending + stats.preparing) > 0 && (
-                            <div className="section-title"><Clock color="#F59E0B" size={20} /> Kitchen Queue ({stats.pending + stats.preparing})</div>
+                            <div className="section-title"><Clock color="var(--warning)" size={20} /> Kitchen Queue ({stats.pending + stats.preparing})</div>
                         )}
                         <div className="orders-grid">
                             {orders.filter(o => o.status === 'pending' || o.status === 'preparing').map(o => <OrderCard key={o._id} order={o} />)}

@@ -4,17 +4,17 @@ import { BarChart3, TrendingUp, Users, DollarSign, ArrowUpRight, ShoppingBag } f
 const Analytics = () => {
     // Mock Data for Prototype
     const stats = [
-        { label: 'Total Revenue', value: '₹42,500', trend: '+12.5%', icon: DollarSign, color: '#E23744' },
-        { label: 'Total Orders', value: '850', trend: '+18.2%', icon: ShoppingBag, color: '#3B82F6' },
-        { label: 'Active Users', value: '1,240', trend: '+5.4%', icon: Users, color: '#10B981' },
-        { label: 'Growth Rate', value: '24%', trend: '+2.1%', icon: TrendingUp, color: '#F59E0B' },
+        { label: 'Total Revenue', value: '₹42,500', trend: '+12.5%', icon: DollarSign, color: 'var(--primary)' },
+        { label: 'Total Orders', value: '850', trend: '+18.2%', icon: ShoppingBag, color: 'var(--info)' },
+        { label: 'Active Users', value: '1,240', trend: '+5.4%', icon: Users, color: 'var(--success)' },
+        { label: 'Growth Rate', value: '24%', trend: '+2.1%', icon: TrendingUp, color: 'var(--warning)' },
     ];
 
     return (
         <div style={{ color: 'white' }}>
             <div style={{ marginBottom: '2.5rem' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-1px' }}>System Analytics</h1>
-                <p style={{ color: '#8B949E', margin: '4px 0 0 0' }}>Real-time performance tracking and metrics</p>
+                <p style={{ color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Real-time performance tracking and metrics</p>
             </div>
 
             {/* Quick Stats Grid */}
@@ -42,10 +42,10 @@ const Analytics = () => {
                             <stat.icon size={22} />
                         </div>
 
-                        <p style={{ fontSize: '0.85rem', color: '#8B949E', margin: '0 0 8px 0', fontWeight: 600 }}>{stat.label}</p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 8px 0', fontWeight: 600 }}>{stat.label}</p>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
                             <h3 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>{stat.value}</h3>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#22C55E', display: 'flex', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--success)', display: 'flex', alignItems: 'center' }}>
                                 {stat.trend} <ArrowUpRight size={12} />
                             </span>
                         </div>
@@ -79,9 +79,9 @@ const Analytics = () => {
                     justifyContent: 'center',
                     alignItems: 'center'
                 }}>
-                    <BarChart3 size={48} style={{ color: '#E23744', opacity: 0.2, marginBottom: '1.5rem' }} />
+                    <BarChart3 size={48} style={{ color: 'var(--primary)', opacity: 0.2, marginBottom: '1.5rem' }} />
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Sales Traffic</h3>
-                    <p style={{ color: '#8B949E', maxWidth: '300px' }}>Revenue charts and hourly traffic logs will be live in the next update.</p>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '300px' }}>Revenue charts and hourly traffic logs will be live in the next update.</p>
                 </div>
 
                 <div style={{
@@ -96,9 +96,9 @@ const Analytics = () => {
                     justifyContent: 'center',
                     alignItems: 'center'
                 }}>
-                    <TrendingUp size={48} style={{ color: '#3B82F6', opacity: 0.2, marginBottom: '1.5rem' }} />
+                    <TrendingUp size={48} style={{ color: 'var(--info)', opacity: 0.2, marginBottom: '1.5rem' }} />
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Orders Forecast</h3>
-                    <p style={{ color: '#8B949E', maxWidth: '300px' }}>AI-driven demand forecasting will appear here based on historical data.</p>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '300px' }}>AI-driven demand forecasting will appear here based on historical data.</p>
                 </div>
             </div>
         </div>

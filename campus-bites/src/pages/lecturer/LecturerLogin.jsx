@@ -32,26 +32,7 @@ const LecturerLogin = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', position: 'relative', overflow: 'hidden', color: 'white' }}>
-            <style>{`
-                * { box-sizing: border-box; }
-                .lec-floating { position:absolute;font-size:3.5rem;opacity:0.1;pointer-events:none;animation:float 8s ease-in-out infinite; }
-                .lec-glass { background:rgba(26,26,28,0.95);border-radius:1.5rem;box-shadow:0 20px 50px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.08);animation:slideIn 0.8s cubic-bezier(0.16,1,0.3,1); }
-                .lec-glow { position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(226,55,68,0.15) 0%,transparent 70%);filter:blur(40px);animation:pulse 4s ease-in-out infinite; }
-                .lec-input { width:100%;box-sizing:border-box;padding:1rem 1rem 1rem 3rem;border:1px solid rgba(255,255,255,0.1);border-radius:1rem;font-size:1rem;transition:all 0.3s ease;background:rgba(255,255,255,0.05);color:white;outline:none; }
-                .lec-input:focus { border-color:#E23744;background:rgba(226,55,68,0.05);box-shadow:0 0 0 3px rgba(226,55,68,0.1); }
-                .lec-input::placeholder { color:#8B949E; }
-                .lec-input option { background:#1a1a1c;color:white; }
-                .lec-btn { width:100%;padding:1rem;background:linear-gradient(135deg,#E23744,#DC2626);color:white;border:none;border-radius:1rem;font-size:1.1rem;font-weight:600;cursor:pointer;transition:all 0.3s ease;box-shadow:0 10px 30px rgba(226,55,68,0.3);display:flex;align-items:center;justify-content:center;gap:8px; }
-                .lec-btn:hover:not(:disabled) { transform:translateY(-3px);box-shadow:0 15px 40px rgba(226,55,68,0.4); }
-                .lec-btn:disabled { opacity:0.7;cursor:not-allowed; }
-                .tab-active { border-bottom:2px solid #E23744;color:#E23744; }
-                .tab-inactive { border-bottom:2px solid transparent;color:#8B949E; }
-                .tab-inactive:hover { color:rgba(255,255,255,0.7); }
-                .animate-item { animation:slideInStagger 0.6s cubic-bezier(0.16,1,0.3,1) both; }
-                .delay-1{animation-delay:.1s}.delay-2{animation-delay:.2s}.delay-3{animation-delay:.3s}.delay-4{animation-delay:.4s}.delay-5{animation-delay:.5s}
-            `}</style>
-
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-deep)', position: 'relative', overflow: 'hidden', color: 'white' }}>
             {/* Background */}
             <div className="lec-glow" style={{ top: '10%', left: '10%' }} />
             <div className="lec-glow" style={{ bottom: '10%', right: '10%', animationDelay: '2s' }} />
@@ -64,23 +45,23 @@ const LecturerLogin = () => {
             <div className="lec-glass" style={{ width: '90%', maxWidth: '450px', padding: '3rem 2rem', zIndex: 10 }}>
                 {/* Logo */}
                 <div className="animate-item delay-1" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                    <div style={{ width: 80, height: 80, background: 'linear-gradient(135deg,#E23744,#DC2626)', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', transform: 'rotate(-5deg)', boxShadow: '0 10px 30px rgba(226,55,68,0.4)', position: 'relative' }}>
+                    <div style={{ width: 80, height: 80, background: 'linear-gradient(135deg,var(--primary),var(--primary-hover))', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', transform: 'rotate(-5deg)', boxShadow: '0 10px 30px var(--primary-glow)', position: 'relative' }}>
                         <UtensilsCrossed color="white" size={40} />
-                        <div style={{ position: 'absolute', top: -8, right: -8, background: '#7c3aed', width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, border: '2px solid #0D0D0D' }}>🎓</div>
+                        <div style={{ position: 'absolute', top: -8, right: -8, background: 'var(--purple)', width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, border: '2px solid var(--bg-deep)' }}>🎓</div>
                     </div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, background: 'linear-gradient(135deg,#E23744,#F59E0B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: 4 }}>Campus Bites</h1>
-                    <p style={{ color: '#8B949E', fontSize: '0.9rem' }}>Faculty Cabin Delivery Portal</p>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, background: 'linear-gradient(135deg,var(--primary),var(--warning))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: 4 }}>Campus Bites</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Faculty Cabin Delivery Portal</p>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10 }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0.4rem 0.9rem', background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '2rem', fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600 }}>
+                        <span className="badge badge-purple">
                             🎓 Lecturer Access
                         </span>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="animate-item delay-2" style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '1.5rem' }}>
+                <div className="animate-item delay-2" style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)', marginBottom: '1.5rem' }}>
                     {['login', 'register'].map(m => (
-                        <button key={m} onClick={() => { setMode(m); setError(''); }} style={{ flex: 1, padding: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem', color: mode === m ? '#E23744' : '#8B949E', borderBottom: mode === m ? '2px solid #E23744' : '2px solid transparent', transition: 'all 0.3s', marginBottom: -1 }}>
+                        <button key={m} onClick={() => { setMode(m); setError(''); }} style={{ flex: 1, padding: '0.75rem', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.95rem', color: mode === m ? 'var(--primary)' : 'var(--text-muted)', borderBottom: mode === m ? '2px solid var(--primary)' : '2px solid transparent', transition: 'all 0.3s', marginBottom: -1 }}>
                             {m === 'login' ? 'Sign In' : 'Register'}
                         </button>
                     ))}
@@ -94,34 +75,34 @@ const LecturerLogin = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {mode === 'register' && (
                             <div className="animate-item delay-2" style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><User size={18} /></span>
-                                <input className="lec-input" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                                <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><User size={18} /></span>
+                                <input className="input-field" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
                             </div>
                         )}
 
                         <div className="animate-item delay-2" style={{ position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><Mail size={18} /></span>
-                            <input className="lec-input" name="email" type="email" placeholder="Institutional Email" value={formData.email} onChange={handleChange} required />
+                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Mail size={18} /></span>
+                            <input className="input-field" name="email" type="email" placeholder="Institutional Email" value={formData.email} onChange={handleChange} required />
                         </div>
 
                         <div className="animate-item delay-3" style={{ position: 'relative' }}>
-                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><Lock size={18} /></span>
-                            <input className="lec-input" name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Lock size={18} /></span>
+                            <input className="input-field" name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
                         </div>
 
                         {mode === 'register' && (
                             <>
                                 <div className="animate-item delay-4" style={{ position: 'relative' }}>
-                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><Hash size={18} /></span>
-                                    <input className="lec-input" name="cabinNumber" placeholder="Cabin Number (e.g. C-204)" value={formData.cabinNumber} onChange={handleChange} required />
+                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Hash size={18} /></span>
+                                    <input className="input-field" name="cabinNumber" placeholder="Cabin Number (e.g. C-204)" value={formData.cabinNumber} onChange={handleChange} required />
                                 </div>
                                 <div className="animate-item delay-5" style={{ position: 'relative' }}>
-                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><Phone size={18} /></span>
-                                    <input className="lec-input" name="phone" type="tel" placeholder="Phone Number (optional)" value={formData.phone} onChange={handleChange} />
+                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Phone size={18} /></span>
+                                    <input className="input-field" name="phone" type="tel" placeholder="Phone Number (optional)" value={formData.phone} onChange={handleChange} />
                                 </div>
                                 <div className="animate-item delay-5" style={{ position: 'relative' }}>
-                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#8B949E' }}><BookOpen size={18} /></span>
-                                    <select className="lec-input" name="department" value={formData.department} onChange={handleChange}>
+                                    <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><BookOpen size={18} /></span>
+                                    <select className="input-field" name="department" value={formData.department} onChange={handleChange}>
                                         <option value="">Select Department</option>
                                         {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
@@ -138,13 +119,13 @@ const LecturerLogin = () => {
                 {/* Divider */}
                 <Divider />
 
-                <Link to="/" style={{ display: 'block', textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', color: 'white', textDecoration: 'none', fontWeight: 600, transition: 'all 0.3s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(226,55,68,0.1)'; e.currentTarget.style.borderColor = 'rgba(226,55,68,0.3)'; e.currentTarget.style.color = '#E23744'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'white'; }}>
+                <Link to="/" style={{ display: 'block', textAlign: 'center', padding: '1rem', background: 'var(--surface)', border: '1px solid var(--glass-border)', borderRadius: '1rem', color: 'white', textDecoration: 'none', fontWeight: 600, transition: 'all 0.3s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-surface)'; e.currentTarget.style.borderColor = 'var(--primary-border)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.color = 'white'; }}>
                     ← Back to Student Login
                 </Link>
 
-                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: '#8B949E', fontSize: '0.8rem' }}>
+                <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     Orders are delivered directly to your registered cabin 🚪
                 </p>
             </div>

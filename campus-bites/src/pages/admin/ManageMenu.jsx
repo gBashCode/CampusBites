@@ -13,7 +13,6 @@ const ManageMenu = () => {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const { user, token } = useAuth();
 
-    // Form State
     const [formData, setFormData] = useState({
         name: '', price: '', category: 'Snacks', description: '', image: '', isAvailable: true, isVeg: true
     });
@@ -103,114 +102,11 @@ const ManageMenu = () => {
 
     return (
         <div style={{ color: 'white' }}>
-            <style>{`
-                .admin-table {
-                    width: 100%;
-                    border-collapse: separate;
-                    border-spacing: 0 10px;
-                }
-                .admin-table th {
-                    color: #8B949E;
-                    text-transform: uppercase;
-                    font-size: 0.75rem;
-                    font-weight: 700;
-                    letter-spacing: 1px;
-                    padding: 0 1.5rem 1rem 1.5rem;
-                }
-                .table-row {
-                    background: rgba(255, 255, 255, 0.02);
-                    transition: all 0.3s ease;
-                }
-                .table-row:hover {
-                    background: rgba(255, 255, 255, 0.05);
-                    transform: scale(1.005);
-                }
-                .table-row td {
-                    padding: 1.25rem 1.5rem;
-                }
-                .table-row td:first-child { border-radius: 16px 0 0 16px; }
-                .table-row td:last-child { border-radius: 0 16px 16px 0; }
-
-                .input-field-dark {
-                    width: 100%;
-                    padding: 0.8rem 1rem;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 12px;
-                    color: white;
-                    font-size: 1rem;
-                    transition: all 0.2s;
-                    box-sizing: border-box;
-                }
-                .input-field-dark:focus {
-                    outline: none;
-                    border-color: #E23744;
-                    background: rgba(226, 55, 68, 0.05);
-                }
-                .modal-overlay {
-                    position: fixed;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0, 0, 0, 0.8);
-                    backdrop-filter: blur(8px);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                    padding: 1.5rem;
-                }
-                .action-btn {
-                    padding: 0.5rem;
-                    border-radius: 8px;
-                    border: 1px solid rgba(255,255,255,0.05);
-                    background: transparent;
-                    color: #9CA3AF;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .action-btn:hover {
-                    color: white;
-                    background: rgba(255,255,255,0.1);
-                }
-                .action-btn.delete:hover {
-                    color: #F87171;
-                    background: rgba(248, 113, 113, 0.1);
-                }
-                
-                @media (max-width: 768px) {
-                    .admin-table thead { display: none; }
-                    .table-row { 
-                        display: block; 
-                        margin-bottom: 1.5rem; 
-                        padding: 1rem; 
-                        border-radius: 16px !important;
-                    }
-                    .table-row td { 
-                        display: flex; 
-                        justify-content: space-between; 
-                        align-items: center; 
-                        padding: 0.75rem 0.5rem;
-                        border: none !important;
-                    }
-                    .table-row td::before {
-                        content: attr(data-label);
-                        font-size: 0.7rem;
-                        color: #8B949E;
-                        text-transform: uppercase;
-                        font-weight: 700;
-                    }
-                    .header-bar { flex-direction: column; align-items: flex-start !important; gap: 1.5rem; }
-                    .header-bar h1 { font-size: 1.5rem !important; }
-                    .add-btn { width: 100%; justify-content: center; }
-                    .modal-content { padding: 1.5rem !important; }
-                    .form-grid { flex-direction: column !important; gap: 1.5rem !important; }
-                }
-            `}</style>
-
             {/* Header Action Bar */}
             <div className="header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-1px' }}>Menu</h1>
-                    <p style={{ color: '#8B949E', margin: '4px 0 0 0' }}>Manage items & prices</p>
+                    <p style={{ color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Manage items & prices</p>
                 </div>
                 <PrimaryButton icon={Plus} onClick={() => handleOpenModal()} className="add-btn">
                     Add Item
@@ -220,11 +116,11 @@ const ManageMenu = () => {
             {/* Table Area */}
             <div style={{ overflowX: 'hidden' }}>
                 {fetchLoading ? (
-                    <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#8B949E' }}>
+                    <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
                         <div style={{
                             width: '32px', height: '32px',
-                            border: '3px solid rgba(255,255,255,0.1)',
-                            borderTop: '3px solid #E23744',
+                            border: '3px solid var(--glass-border)',
+                            borderTop: '3px solid var(--primary)',
                             borderRadius: '50%',
                             animation: 'spin 0.8s linear infinite',
                             margin: '0 auto 1rem'
@@ -247,11 +143,11 @@ const ManageMenu = () => {
                             <tr key={product._id} className="table-row">
                                 <td data-label="Item">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <div style={{ width: '45px', height: '45px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
+                                        <div style={{ width: '45px', height: '45px', borderRadius: '10px', background: 'var(--surface)', overflow: 'hidden', flexShrink: 0 }}>
                                             {product.image ? (
                                                 <img src={product.image} alt={`${product.name} image`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
-                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}>
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
                                                     <ImageIcon size={18} />
                                                 </div>
                                             )}
@@ -268,7 +164,7 @@ const ManageMenu = () => {
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '6px',
-                                        color: product.isAvailable ? '#22C55E' : '#9CA3AF',
+                                        color: product.isAvailable ? 'var(--success)' : 'var(--text-secondary)',
                                         fontSize: '0.85rem',
                                         fontWeight: 600
                                     }}>
@@ -283,13 +179,13 @@ const ManageMenu = () => {
                                             <div style={{ display: 'flex', gap: '4px' }}>
                                                 <button
                                                     onClick={() => handleDelete(product._id)}
-                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: '#EF4444', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: 'var(--danger)', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
                                                 >
                                                     Confirm
                                                 </button>
                                                 <button
                                                     onClick={() => setConfirmDelete(null)}
-                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}
+                                                    style={{ padding: '4px 8px', borderRadius: '6px', background: 'var(--surface)', color: 'white', border: 'none', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}
                                                 >
                                                     Cancel
                                                 </button>
@@ -312,7 +208,7 @@ const ManageMenu = () => {
                     <div className="glass-card modal-content" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>{editingProduct ? 'Edit Item' : 'New Item'}</h2>
-                            <button onClick={() => setIsModalOpen(false)} aria-label="Close dialog" style={{ background: 'transparent', border: 'none', color: '#8B949E', cursor: 'pointer' }}><XCircle size={20} /></button>
+                            <button onClick={() => setIsModalOpen(false)} aria-label="Close dialog" className="btn-ghost"><XCircle size={20} /></button>
                         </div>
 
                         <form onSubmit={handleSubmit}>
@@ -342,7 +238,7 @@ const ManageMenu = () => {
                             <div style={{ marginBottom: '1rem' }}>
                                 <InputField label="Image URL" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="https://..." />
                                 {formData.image && (
-                                    <div style={{ marginTop: '8px', width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div style={{ marginTop: '8px', width: '60px', height: '60px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
                                         <img
                                             src={formData.image}
                                             alt="Preview"
@@ -355,7 +251,7 @@ const ManageMenu = () => {
 
                             {/* Veg/Non-Veg Selection */}
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#8B949E', marginBottom: '10px', textTransform: 'uppercase' }}>Food Type</label>
+                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>Food Type</label>
                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                     {/* Veg Option */}
                                     <div
@@ -363,9 +259,9 @@ const ManageMenu = () => {
                                         style={{
                                             flex: 1,
                                             padding: '1rem',
-                                            borderRadius: '12px',
-                                            border: formData.isVeg ? '2px solid #22C55E' : '1px solid rgba(255,255,255,0.1)',
-                                            background: formData.isVeg ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.03)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: formData.isVeg ? '2px solid var(--success)' : '1px solid var(--glass-border)',
+                                            background: formData.isVeg ? 'var(--success-surface)' : 'rgba(255,255,255,0.03)',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
                                             display: 'flex',
@@ -376,7 +272,7 @@ const ManageMenu = () => {
                                         <div style={{
                                             width: '20px',
                                             height: '20px',
-                                            border: '2px solid #22C55E',
+                                            border: '2px solid var(--success)',
                                             borderRadius: '4px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -387,10 +283,10 @@ const ManageMenu = () => {
                                                 width: '10px',
                                                 height: '10px',
                                                 borderRadius: '50%',
-                                                background: '#22C55E'
+                                                background: 'var(--success)'
                                             }} />
                                         </div>
-                                        <span style={{ fontWeight: 600, color: formData.isVeg ? '#22C55E' : '#9CA3AF' }}>Vegetarian</span>
+                                        <span style={{ fontWeight: 600, color: formData.isVeg ? 'var(--success)' : 'var(--text-secondary)' }}>Vegetarian</span>
                                     </div>
 
                                     {/* Non-Veg Option */}
@@ -399,9 +295,9 @@ const ManageMenu = () => {
                                         style={{
                                             flex: 1,
                                             padding: '1rem',
-                                            borderRadius: '12px',
-                                            border: !formData.isVeg ? '2px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
-                                            background: !formData.isVeg ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.03)',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: !formData.isVeg ? '2px solid var(--danger)' : '1px solid var(--glass-border)',
+                                            background: !formData.isVeg ? 'var(--danger-surface)' : 'rgba(255,255,255,0.03)',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
                                             display: 'flex',
@@ -412,7 +308,7 @@ const ManageMenu = () => {
                                         <div style={{
                                             width: '20px',
                                             height: '20px',
-                                            border: '2px solid #EF4444',
+                                            border: '2px solid var(--danger)',
                                             borderRadius: '4px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -424,10 +320,10 @@ const ManageMenu = () => {
                                                 height: 0,
                                                 borderLeft: '5px solid transparent',
                                                 borderRight: '5px solid transparent',
-                                                borderBottom: '8px solid #EF4444'
+                                                borderBottom: '8px solid var(--danger)'
                                             }} />
                                         </div>
-                                        <span style={{ fontWeight: 600, color: !formData.isVeg ? '#EF4444' : '#9CA3AF' }}>Non-Vegetarian</span>
+                                        <span style={{ fontWeight: 600, color: !formData.isVeg ? 'var(--danger)' : 'var(--text-secondary)' }}>Non-Vegetarian</span>
                                     </div>
                                 </div>
                             </div>
@@ -438,7 +334,7 @@ const ManageMenu = () => {
                                     id="available"
                                     checked={formData.isAvailable}
                                     onChange={e => setFormData({ ...formData, isAvailable: e.target.checked })}
-                                    style={{ width: '18px', height: '18px', accentColor: '#E23744', cursor: 'pointer' }}
+                                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
                                 />
                                 <label htmlFor="available" style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' }}>Available</label>
                             </div>

@@ -19,7 +19,7 @@ const Dashboard = () => {
     return (
         <div style={{
             minHeight: '100vh',
-            background: '#0D0D0D',
+            background: 'var(--bg-deep)',
             color: 'white',
             paddingBottom: '80px'
         }}>
@@ -67,7 +67,7 @@ const Dashboard = () => {
                                     alignItems: 'center',
                                     gap: '6px',
                                     textDecoration: 'none',
-                                    color: active ? '#E23744' : '#9CA3AF',
+                                    color: active ? 'var(--primary)' : 'var(--text-secondary)',
                                     position: 'relative',
                                     transition: 'all 0.3s ease'
                                 }}
@@ -90,7 +90,7 @@ const Dashboard = () => {
                                             position: 'absolute',
                                             top: '-8px',
                                             right: '-8px',
-                                            background: '#E23744',
+                                            background: 'var(--primary)',
                                             color: 'white',
                                             fontSize: '10px',
                                             fontWeight: 'bold',
@@ -100,7 +100,7 @@ const Dashboard = () => {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            border: '2px solid #1C1C1E'
+                                            border: '2px solid var(--bg-card)'
                                         }}>
                                             {item.badge}
                                         </span>
@@ -123,11 +123,11 @@ const Dashboard = () => {
                                     <div aria-hidden="true" style={{
                                         width: '4px',
                                         height: '4px',
-                                        background: '#E23744',
+                                        background: 'var(--primary)',
                                         borderRadius: '50%',
                                         position: 'absolute',
                                         bottom: '-22px',
-                                        boxShadow: '0 0 8px #E23744'
+                                        boxShadow: '0 0 8px var(--primary)'
                                     }} />
                                 )}
                             </Link>
