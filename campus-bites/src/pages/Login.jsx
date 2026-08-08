@@ -158,7 +158,7 @@ const Login = () => {
         <ErrorDisplay>{error}</ErrorDisplay>
 
         {!showOtp ? (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} aria-label="Sign in to your account">
             <div className="animate-slideIn delay-5">
               <InputField icon={Mail} type="email" placeholder="Email Address" aria-label="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
@@ -175,7 +175,7 @@ const Login = () => {
             </PrimaryButton>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp}>
+          <form onSubmit={handleVerifyOtp} aria-label="Verify OTP code">
             <InputField
               type="text"
               placeholder="6-digit Verification Code"

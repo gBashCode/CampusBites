@@ -95,9 +95,9 @@ const Orders = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', background: 'var(--surface)', padding: 'var(--space-2xs)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-lg)', position: 'relative' }}>
+      <div role="tablist" style={{ display: 'flex', background: 'var(--surface)', padding: 'var(--space-2xs)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-lg)', position: 'relative' }}>
         {['active', 'past'].map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
+          <button key={tab} onClick={() => setActiveTab(tab)} role="tab" aria-selected={activeTab === tab}
             style={{
               flex: 1, padding: 'var(--space-xs) var(--space-md)', border: 'none', borderRadius: 'var(--radius-md)',
               background: activeTab === tab ? 'rgba(255,255,255,0.05)' : 'transparent',

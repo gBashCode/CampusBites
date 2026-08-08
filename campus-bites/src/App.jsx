@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import SplashScreen from './components/SplashScreen'
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { LoadingContainer } from './components/ui'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -12,15 +13,15 @@ import Cart from './pages/Cart'
 import Orders from './pages/Orders'
 import Profile from './pages/Profile'
 
-// Admin & Staff
-import AdminDashboard from './pages/admin/AdminDashboard'
+// Admin & Staff (lazy-loaded for code splitting)
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'))
 import ManageMenu from './pages/admin/ManageMenu'
-import Analytics from './pages/admin/Analytics'
-import KitchenView from './pages/staff/KitchenView'
+const Analytics = React.lazy(() => import('./pages/admin/Analytics'))
+const KitchenView = React.lazy(() => import('./pages/staff/KitchenView'))
 import ForgotPassword from './pages/ForgotPassword'
 import LecturerLogin from './pages/lecturer/LecturerLogin'
 import DeliveryLogin from './pages/delivery/DeliveryLogin'
-import DeliveryPortal from './pages/delivery/DeliveryPortal'
+const DeliveryPortal = React.lazy(() => import('./pages/delivery/DeliveryPortal'))
 
 class ErrorBoundary extends React.Component {
     state = { hasError: false, error: null };
@@ -40,16 +41,17 @@ class ErrorBoundary extends React.Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0D0D0D', color: 'white' }}>
+                <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-deep)', color: 'var(--text-main)' }}>
                     <div style={{ textAlign: 'center', maxWidth: '400px', padding: '2rem' }}>
                         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Something went wrong</h2>
-                        <p style={{ color: '#9CA3AF', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
                             An unexpected error occurred. Please try again.
                         </p>
                         <button
                             onClick={() => { this.handleReset(); window.location.href = '/'; }}
-                            style={{ padding: '0.75rem 2rem', background: '#E23744', color: 'white', border: 'none', borderRadius: '0.75rem', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' }}
+                            className="btn-primary"
+                            style={{ maxWidth: '200px', margin: '0 auto' }}
                         >
                             Go to Home
                         </button>
@@ -65,7 +67,11 @@ class ErrorBoundary extends React.Component {
 const ProtectedRoute = ({ children, roles }) => {
     const { user, loading } = useAuth();
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-deep)' }}>
+            <div className="loading-spinner" style={{ width: '32px', height: '32px' }} />
+        </div>
+    );
 
     if (!user) {
         return <Navigate to="/" replace />;
@@ -97,6 +103,7 @@ function App() {
             <CartProvider>
                 <Router>
                     <ErrorBoundary>
+                    <Suspense fallback={<LoadingContainer />}>
                     <Routes>
                         <Route path="/" element={<Login />} />
                         <Route path="/register" element={<Register />} />
@@ -153,6 +160,7 @@ function App() {
                         } />
 
                     </Routes>
+                    </Suspense>
                     </ErrorBoundary>
                 </Router>
             </CartProvider>

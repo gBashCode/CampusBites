@@ -109,9 +109,7 @@ const MENU_PAGE = {
     fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 500,
   },
 
-  grid: {
-    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-sm)',
-  },
+  grid: {},
 
   card: (i) => ({
     borderRadius: 'var(--radius-xl)', overflow: 'hidden',
@@ -351,11 +349,13 @@ const Menu = () => {
         {filteredProducts.length === 0 ? (
           <EmptyState icon={Search} title="No items found" description="Try a different search or filter." />
         ) : (
-          <div style={MENU_PAGE.grid}>
+          <div className="product-grid">
             {filteredProducts.map((product, idx) => (
               <div
                 key={product.id}
                 className="glass-card"
+                role="article"
+                aria-label={product.name}
                 style={MENU_PAGE.card(idx)}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';

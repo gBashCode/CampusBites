@@ -481,6 +481,25 @@ input:focus-visible {
   top: var(--space-md);
 }
 
+/* ── Product Grid ─────────────────────────────────────────────────────────── */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+@media (max-width: 380px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 /* ── Responsive Utilities ────────────────────────────────────────────────── */
 @media (max-width: 380px) {
   .responsive-grid-2 {

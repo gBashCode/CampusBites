@@ -338,7 +338,7 @@ const Cart = () => {
       </div>
 
       {/* Checkout */}
-      <PrimaryButton onClick={handleCheckout} loading={loading} icon={Lock}
+      <PrimaryButton onClick={handleCheckout} loading={loading} icon={Lock} aria-busy={loading}
         style={{ width: '100%', padding: '1.2rem', borderRadius: 'var(--radius-xl)', fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-bold)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {isLecturer ? `🚪 Deliver to Cabin ${user?.cabinNumber}` : `Place Order (₹${finalTotal})`}
       </PrimaryButton>
