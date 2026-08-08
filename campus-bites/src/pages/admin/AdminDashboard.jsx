@@ -1,6 +1,6 @@
 import React, { useState, Component } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { GlassCard } from '../../components/ui';
 

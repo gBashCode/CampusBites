@@ -4,7 +4,7 @@ import { LogOut, RefreshCw, Clock, Bike, CheckCircle2, Package, Inbox, MapPin, P
 import { useNavigate } from 'react-router-dom';
 
 import API_URL from '../../apiConfig';
-import { StatusChip, PrimaryButton, SecondaryButton, GhostButton, EmptyState } from '../../components/ui';
+import { StatusChip, PrimaryButton, EmptyState } from '../../components/ui';
 
 const DeliveryPortal = () => {
     const [orders, setOrders] = useState([]);
@@ -23,7 +23,7 @@ const DeliveryPortal = () => {
                 setOrders(data);
             }
         } catch (err) {
-            console.error('Fetch error', err);
+            // Fetch failed silently
         }
     };
 

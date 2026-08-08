@@ -74,21 +74,21 @@ const DeliveryLogin = () => {
                         {mode === 'register' && (
                             <div className="ai d2" style={{ position: 'relative' }}>
                                 <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><User size={18} /></span>
-                                <input className="input-field" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                                <input className="input-field" name="name" placeholder="Full Name" aria-label="Full Name" value={formData.name} onChange={handleChange} required />
                             </div>
                         )}
                         <div className="ai d2" style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Mail size={18} /></span>
-                            <input className="input-field" name="email" type="email" placeholder="Email Address" value={formData.email} onChange={handleChange} required />
+                            <input className="input-field" name="email" type="email" placeholder="Email Address" aria-label="Email Address" value={formData.email} onChange={handleChange} required />
                         </div>
                         <div className="ai d3" style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Lock size={18} /></span>
-                            <input className="input-field" name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                            <input className="input-field" name="password" type="password" placeholder="Password" aria-label="Password" value={formData.password} onChange={handleChange} required />
                         </div>
                         {mode === 'register' && (
                             <div className="ai d4" style={{ position: 'relative' }}>
                                 <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Phone size={18} /></span>
-                                <input className="input-field" name="phone" type="tel" placeholder="Phone Number" value={formData.phone} onChange={handleChange} />
+                                <input className="input-field" name="phone" type="tel" placeholder="Phone Number" aria-label="Phone Number" value={formData.phone} onChange={handleChange} />
                             </div>
                         )}
                         {mode === 'login' && (

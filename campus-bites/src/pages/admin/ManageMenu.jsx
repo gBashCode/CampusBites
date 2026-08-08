@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, Filter, Image as ImageIcon, CheckCircle2, XCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import API_URL from '../../apiConfig';
-import { PrimaryButton, SecondaryButton, InputField, EmptyState } from '../../components/ui';
+import { PrimaryButton, SecondaryButton, InputField } from '../../components/ui';
 
 const ManageMenu = () => {
     const [products, setProducts] = useState([]);
@@ -24,7 +24,7 @@ const ManageMenu = () => {
             const data = await res.json();
             setProducts(Array.isArray(data) ? data : data.products || []);
         } catch (err) {
-            console.error('Failed to fetch products');
+            // Failed to fetch products
         } finally {
             setFetchLoading(false);
         }
@@ -61,7 +61,7 @@ const ManageMenu = () => {
                 fetchProducts();
             }
         } catch (err) {
-            console.error('Delete error:', err);
+            // Delete failed
         } finally {
             setConfirmDelete(null);
         }

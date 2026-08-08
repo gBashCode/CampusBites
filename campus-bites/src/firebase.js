@@ -29,7 +29,6 @@ const requestNotificationPermission = async () => {
     try {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            console.log('Notification permission denied');
             return null;
         }
 

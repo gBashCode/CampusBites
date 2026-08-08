@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LogOut, RefreshCw, Clock, ChefHat, CheckCircle2, Flame, Inbox, PackageCheck, Phone, MapPin } from 'lucide-react';
 
 import API_URL from '../../apiConfig';
-import { StatusChip, PrimaryButton, SecondaryButton, GhostButton, LoadingContainer, EmptyState } from '../../components/ui';
+import { StatusChip, PrimaryButton, SecondaryButton, LoadingContainer, EmptyState } from '../../components/ui';
 
 const KitchenView = () => {
     const [orders, setOrders] = useState([]);

@@ -89,7 +89,8 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      const ct = res.headers.get('content-type') || '';
+      const data = ct.includes('application/json') ? await res.json() : {};
       if (res.ok) login(data.user, data.token);
       else setError(data.message || 'Login failed');
     } catch {
@@ -109,7 +110,8 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, otp })
       });
-      const data = await res.json();
+      const ct = res.headers.get('content-type') || '';
+      const data = ct.includes('application/json') ? await res.json() : {};
       if (res.ok) {
         login(data.user, data.token);
         navigate('/dashboard/menu');

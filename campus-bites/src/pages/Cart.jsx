@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Minus, Plus, Clock, Heart, ShoppingCart, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PrimaryButton, EmptyState, GlassCard } from '../components/ui';
+import { PrimaryButton, EmptyState } from '../components/ui';
 import API_URL from '../apiConfig';
 
 const VEG_STYLE = {
@@ -50,6 +50,10 @@ const Cart = () => {
 
     setLoading(true);
     try {
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Payment system unavailable. Please try again later.');
+      }
+
       const orderData = {
         items: cartItems.map(item => ({ product: item._id || item.id, quantity: item.quantity, price: item.price })),
         totalAmount: finalTotal, pickupTime, donation: donationAmount,
@@ -60,7 +64,8 @@ const Cart = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ amount: finalTotal }),
       });
-      const razorpayOrder = await razorpayRes.json();
+      const ct = razorpayRes.headers.get('content-type') || '';
+      const razorpayOrder = ct.includes('application/json') ? await razorpayRes.json() : {};
       if (!razorpayRes.ok) throw new Error(razorpayOrder.message || 'Payment init failed');
 
       const rzp = new window.Razorpay({

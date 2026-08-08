@@ -10,6 +10,8 @@ export function LoadingSpinner({ size = 20, color = 'white' }) {
 export function LoadingContainer({ text = 'Loading...' }) {
   return (
     <div
+      role="status"
+      aria-label="Loading content"
       style={{
         display: 'flex',
         flexDirection: 'column',

@@ -308,7 +308,15 @@ const Menu = () => {
                   key={cat.name}
                   className="category-item"
                   style={MENU_PAGE.categoryItem}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setCategory(cat.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setCategory(cat.name);
+                    }
+                  }}
                 >
                   <div style={MENU_PAGE.categoryCircle(active)}>
                     <img

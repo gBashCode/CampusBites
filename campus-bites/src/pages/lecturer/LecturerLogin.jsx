@@ -76,33 +76,33 @@ const LecturerLogin = () => {
                         {mode === 'register' && (
                             <div className="animate-item delay-2" style={{ position: 'relative' }}>
                                 <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><User size={18} /></span>
-                                <input className="input-field" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                                <input className="input-field" name="name" placeholder="Full Name" aria-label="Full Name" value={formData.name} onChange={handleChange} required />
                             </div>
                         )}
 
                         <div className="animate-item delay-2" style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Mail size={18} /></span>
-                            <input className="input-field" name="email" type="email" placeholder="Institutional Email" value={formData.email} onChange={handleChange} required />
+                            <input className="input-field" name="email" type="email" placeholder="Institutional Email" aria-label="Institutional Email" value={formData.email} onChange={handleChange} required />
                         </div>
 
                         <div className="animate-item delay-3" style={{ position: 'relative' }}>
                             <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Lock size={18} /></span>
-                            <input className="input-field" name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                            <input className="input-field" name="password" type="password" placeholder="Password" aria-label="Password" value={formData.password} onChange={handleChange} required />
                         </div>
 
                         {mode === 'register' && (
                             <>
                                 <div className="animate-item delay-4" style={{ position: 'relative' }}>
                                     <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Hash size={18} /></span>
-                                    <input className="input-field" name="cabinNumber" placeholder="Cabin Number (e.g. C-204)" value={formData.cabinNumber} onChange={handleChange} required />
+                                    <input className="input-field" name="cabinNumber" placeholder="Cabin Number (e.g. C-204)" aria-label="Cabin Number" value={formData.cabinNumber} onChange={handleChange} required />
                                 </div>
                                 <div className="animate-item delay-5" style={{ position: 'relative' }}>
                                     <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><Phone size={18} /></span>
-                                    <input className="input-field" name="phone" type="tel" placeholder="Phone Number (optional)" value={formData.phone} onChange={handleChange} />
+                                    <input className="input-field" name="phone" type="tel" placeholder="Phone Number (optional)" aria-label="Phone Number" value={formData.phone} onChange={handleChange} />
                                 </div>
                                 <div className="animate-item delay-5" style={{ position: 'relative' }}>
                                     <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}><BookOpen size={18} /></span>
-                                    <select className="input-field" name="department" value={formData.department} onChange={handleChange}>
+                                    <select className="input-field" name="department" aria-label="Department" value={formData.department} onChange={handleChange}>
                                         <option value="">Select Department</option>
                                         {departments.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
