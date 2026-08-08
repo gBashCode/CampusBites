@@ -1,511 +1,635 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
-const sendEmail = require('../utils/sendEmail');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
+const { query } = require('../db');
 const { validateEmail, validatePassword, validateName, validatePhone } = require('../utils/validators');
 const { verifyUser } = require('../middleware/auth');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const sendEmail = require('../utils/sendEmail');
 
-// Safe user fields for responses
-const SAFE_USER_FIELDS = 'id name email role cabinNumber department phone';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const SAFE_USER_FIELDS = 'id, name, email, role, cabin_number, department, phone, is_verified, created_at';
 
-// ─── Register ───────────────────────────────────────────────────────────────
+function generateToken(user) {
+  return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
+}
+
+function generateOTP() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
 router.post('/register', async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-
-        if (!validateName(name)) {
-            return res.status(400).json({ message: 'Name must be 2-100 characters' });
-        }
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!validatePassword(password)) {
-            return res.status(400).json({ message: 'Password must be 8-128 characters with at least 1 uppercase, 1 lowercase, and 1 number' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        const existingUser = await User.findOne({ email: normalizedEmail });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        const user = new User({
-            name: name.trim(),
-            email: normalizedEmail,
-            password,
-            isVerified: true,
-            role: 'student'
-        });
-        await user.save();
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(201).json({
-            message: 'Registration successful',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role },
-            token,
-            requiresVerification: false
-        });
-    } catch (err) {
-        console.error('Register error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { name, email, password } = req.body;
+    if (!validateName(name)) {
+      return res.status(400).json({ message: 'Invalid name' });
     }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    if (!validatePassword(password)) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    const result = await query(
+      `INSERT INTO users (name, email, password, otp, otp_expires, role)
+       VALUES ($1, $2, $3, $4, $5, 'student')
+       RETURNING ${SAFE_USER_FIELDS}`,
+      [name.trim(), email.toLowerCase(), hashedPassword, otp, otpExpires]
+    );
+
+    const user = result.rows[0];
+    const token = generateToken(user);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify Your Campus Bites Account',
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 15 minutes.</p>`
+      });
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr);
+    }
+
+    res.status(201).json({
+      message: 'Registration successful. Please check your email for verification code.',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Verify OTP ─────────────────────────────────────────────────────────────
 router.post('/verify-otp', async (req, res) => {
-    try {
-        const { userId, email, otp } = req.body;
-
-        if (!otp || typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
-            return res.status(400).json({ message: 'Invalid OTP format' });
-        }
-
-        let user;
-        if (userId) {
-            user = await User.findById(userId).select('+otp +otpExpires');
-        } else if (email) {
-            user = await User.findOne({ email: email.toLowerCase().trim() }).select('+otp +otpExpires');
-        }
-
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
-        if (!user.otp || user.otp !== otp) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
-        if (!user.otpExpires || user.otpExpires < Date.now()) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.json({
-            message: 'Email verified successfully',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role },
-            token
-        });
-    } catch (err) {
-        console.error('Verify OTP error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { userId, email, otp } = req.body;
+    if (!userId || !email || !otp) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
+
+    const result = await query(
+      `SELECT * FROM users WHERE id = $1 AND email = $2`,
+      [userId, email.toLowerCase()]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user.is_verified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
+    if (user.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+    if (new Date(user.otp_expires) < new Date()) {
+      return res.status(400).json({ message: 'OTP has expired' });
+    }
+
+    const updated = await query(
+      `UPDATE users SET is_verified = true, otp = NULL, otp_expires = NULL
+       WHERE id = $1
+       RETURNING ${SAFE_USER_FIELDS}`,
+      [userId]
+    );
+    const updatedUser = updated.rows[0];
+    const token = generateToken(updatedUser);
+
+    res.json({
+      message: 'Email verified successfully',
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Login ──────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!password || typeof password !== 'string') {
-            return res.status(400).json({ message: 'Password is required' });
-        }
-
-        const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.json({
-            message: 'Login successful',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role },
-            token
-        });
-    } catch (err) {
-        console.error('Login error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
     }
+
+    const result = await query(
+      `SELECT * FROM users WHERE email = $1`,
+      [email.toLowerCase()]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Forgot Password ────────────────────────────────────────────────────────
 router.post('/forgot-password', async (req, res) => {
-    try {
-        const { email } = req.body;
+  try {
+    const { email } = req.body;
+    const standardMessage = { message: 'If an account exists with that email, a reset code has been sent.' };
 
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        const user = await User.findOne({ email: normalizedEmail }).select('+resetPasswordOtp +resetPasswordExpires');
-
-        // Always return success to prevent user enumeration
-        if (!user) {
-            return res.json({ message: 'If an account exists, a reset code has been sent' });
-        }
-
-        // Generate cryptographically secure OTP
-        const otp = crypto.randomInt(100000, 999999).toString();
-        user.resetPasswordOtp = otp;
-        user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
-        await user.save();
-
-        const message = `Your password reset code is: ${otp}`;
-        await sendEmail(normalizedEmail, 'Reset Password - Campus Bites', message, `<h1>Your Reset Code is ${otp}</h1>`);
-
-        res.json({ message: 'If an account exists, a reset code has been sent' });
-    } catch (err) {
-        console.error('Forgot password error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+    if (!email) {
+      return res.status(400).json(standardMessage);
     }
+
+    const result = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.json(standardMessage);
+    }
+
+    const resetOtp = generateOTP();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    await query(
+      'UPDATE users SET reset_password_otp = $1, reset_password_expires = $2 WHERE id = $3',
+      [resetOtp, resetExpires, user.id]
+    );
+
+    try {
+      await sendEmail({
+        to: email.toLowerCase(),
+        subject: 'Campus Bites Password Reset',
+        html: `<p>Your password reset code is: <strong>${resetOtp}</strong></p><p>This code expires in 15 minutes.</p>`
+      });
+    } catch (emailErr) {
+      console.error('Failed to send reset email:', emailErr);
+    }
+
+    res.json(standardMessage);
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Reset Password ─────────────────────────────────────────────────────────
 router.post('/reset-password', async (req, res) => {
-    try {
-        const { email, otp, newPassword } = req.body;
-
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!otp || typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
-            return res.status(400).json({ message: 'Invalid OTP format' });
-        }
-        if (!validatePassword(newPassword)) {
-            return res.status(400).json({ message: 'Password must be 8-128 characters with at least 1 uppercase, 1 lowercase, and 1 number' });
-        }
-
-        const user = await User.findOne({
-            email: email.toLowerCase().trim(),
-            resetPasswordOtp: otp,
-            resetPasswordExpires: { $gt: Date.now() }
-        }).select('+resetPasswordOtp +resetPasswordExpires');
-
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired OTP' });
-        }
-
-        user.password = newPassword;
-        user.resetPasswordOtp = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
-
-        res.json({ message: 'Password reset successful' });
-    } catch (err) {
-        console.error('Reset password error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+
+    const result = await query(
+      `SELECT id FROM users
+       WHERE email = $1 AND reset_password_otp = $2 AND reset_password_expires > NOW()`,
+      [email.toLowerCase(), otp]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await query(
+      `UPDATE users SET password = $1, reset_password_otp = NULL, reset_password_expires = NULL WHERE id = $2`,
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Google Login ───────────────────────────────────────────────────────────
 router.post('/google', async (req, res) => {
-    try {
-        const { credential, accessToken } = req.body;
-        let email, name;
+  try {
+    const { credential, accessToken } = req.body;
+    let googleUser = null;
 
-        if (credential) {
-            const ticket = await client.verifyIdToken({
-                idToken: credential,
-                audience: process.env.GOOGLE_CLIENT_ID
-            });
-            const payload = ticket.getPayload();
-            email = payload.email;
-            name = payload.name;
-        } else if (accessToken) {
-            const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                headers: { Authorization: `Bearer ${accessToken}` }
-            });
-
-            if (!response.ok) {
-                return res.status(400).json({ message: 'Invalid Google Token' });
-            }
-
-            const userInfo = await response.json();
-            email = userInfo.email;
-            name = userInfo.name;
-        } else {
-            return res.status(400).json({ message: 'No credential provided' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        let user = await User.findOne({ email: normalizedEmail });
-
-        if (!user) {
-            user = new User({
-                name,
-                email: normalizedEmail,
-                password: crypto.randomBytes(32).toString('hex'),
-                isVerified: true,
-                role: 'student'
-            });
-            await user.save();
-        } else if (!user.isVerified) {
-            user.isVerified = true;
-            await user.save();
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.json({
-            message: 'Google login successful',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role },
-            token
-        });
-    } catch (err) {
-        console.error('Google Auth Error:', err.message);
-        res.status(500).json({ message: 'Google authentication failed' });
+    if (credential) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+      const payload = ticket.getPayload();
+      googleUser = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        googleId: payload.sub
+      };
+    } else if (accessToken) {
+      const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!response.ok) {
+        return res.status(401).json({ message: 'Invalid Google access token' });
+      }
+      const data = await response.json();
+      googleUser = {
+        email: data.email,
+        name: data.name,
+        picture: data.picture,
+        googleId: data.id
+      };
+    } else {
+      return res.status(400).json({ message: 'Credential or access token required' });
     }
+
+    if (!googleUser || !googleUser.email) {
+      return res.status(400).json({ message: 'Could not authenticate with Google' });
+    }
+
+    const existing = await query(
+      `SELECT * FROM users WHERE email = $1`,
+      [googleUser.email.toLowerCase()]
+    );
+    let user = existing.rows[0];
+    let isNewUser = false;
+
+    if (!user) {
+      isNewUser = true;
+      const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
+      const result = await query(
+        `INSERT INTO users (name, email, password, is_verified, avatar, role)
+         VALUES ($1, $2, $3, true, $4, 'student')
+         RETURNING ${SAFE_USER_FIELDS}`,
+        [googleUser.name || 'Google User', googleUser.email.toLowerCase(), randomPassword, googleUser.picture || null]
+      );
+      user = result.rows[0];
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      message: isNewUser ? 'Registration successful via Google' : 'Login successful via Google',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Get Profile ────────────────────────────────────────────────────────────
 router.get('/profile', verifyUser, async (req, res) => {
-    try {
-        res.json({ user: req.user });
-    } catch (err) {
-        console.error('Profile error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const result = await query(
+      `SELECT ${SAFE_USER_FIELDS} FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    res.json({ user });
+  } catch (err) {
+    console.error('Profile error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Update Profile ─────────────────────────────────────────────────────────
 router.put('/profile', verifyUser, async (req, res) => {
-    try {
-        const { name, phone, cabinNumber, department } = req.body;
-        const updates = {};
+  try {
+    const { name, phone, cabinNumber, department } = req.body;
 
-        if (name !== undefined) {
-            if (!validateName(name)) {
-                return res.status(400).json({ message: 'Name must be 2-100 characters' });
-            }
-            updates.name = name.trim();
-        }
-        if (phone !== undefined) {
-            if (phone && !validatePhone(phone)) {
-                return res.status(400).json({ message: 'Invalid phone number format' });
-            }
-            updates.phone = (phone || '').trim();
-        }
-        if (cabinNumber !== undefined) updates.cabinNumber = String(cabinNumber || '').trim();
-        if (department !== undefined) updates.department = String(department || '').trim();
-
-        if (Object.keys(updates).length === 0) {
-            return res.status(400).json({ message: 'No valid fields to update' });
-        }
-
-        const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true, runValidators: true });
-
-        res.json({ message: 'Profile updated', user });
-    } catch (err) {
-        console.error('Update profile error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+    if (name !== undefined && !validateName(name)) {
+      return res.status(400).json({ message: 'Invalid name' });
     }
+    if (phone !== undefined && !validatePhone(phone)) {
+      return res.status(400).json({ message: 'Invalid phone number' });
+    }
+
+    const fields = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) {
+      fields.push(`name = $${paramIndex++}`);
+      values.push(name.trim());
+    }
+    if (phone !== undefined) {
+      fields.push(`phone = $${paramIndex++}`);
+      values.push(phone.trim());
+    }
+    if (cabinNumber !== undefined) {
+      fields.push(`cabin_number = $${paramIndex++}`);
+      values.push(cabinNumber ? cabinNumber.trim() : null);
+    }
+    if (department !== undefined) {
+      fields.push(`department = $${paramIndex++}`);
+      values.push(department ? department.trim() : null);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ message: 'No fields to update' });
+    }
+
+    values.push(req.user.id);
+    const result = await query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIndex}
+       RETURNING ${SAFE_USER_FIELDS}`,
+      values
+    );
+
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Change Password ────────────────────────────────────────────────────────
 router.post('/change-password', verifyUser, async (req, res) => {
-    try {
-        const { currentPassword, newPassword } = req.body;
-
-        if (!currentPassword || typeof currentPassword !== 'string') {
-            return res.status(400).json({ message: 'Current password is required' });
-        }
-        if (!validatePassword(newPassword)) {
-            return res.status(400).json({ message: 'New password must be 8-128 characters with at least 1 uppercase, 1 lowercase, and 1 number' });
-        }
-
-        const user = await User.findById(req.user._id).select('+password');
-        const isMatch = await user.comparePassword(currentPassword);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Current password is incorrect' });
-        }
-
-        user.password = newPassword;
-        await user.save();
-
-        res.json({ message: 'Password changed successfully' });
-    } catch (err) {
-        console.error('Change password error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new passwords are required' });
     }
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ message: 'Invalid new password' });
+    }
+
+    const result = await query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.user.id]);
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Lecturer Register ─────────────────────────────────────────────────────
 router.post('/lecturer/register', async (req, res) => {
-    try {
-        const { name, email, password, cabinNumber, department, phone } = req.body;
-
-        if (!validateName(name)) {
-            return res.status(400).json({ message: 'Name must be 2-100 characters' });
-        }
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!validatePassword(password)) {
-            return res.status(400).json({ message: 'Password must be 8-128 characters with at least 1 uppercase, 1 lowercase, and 1 number' });
-        }
-        if (!cabinNumber || typeof cabinNumber !== 'string' || !cabinNumber.trim()) {
-            return res.status(400).json({ message: 'Cabin number is required for lecturer registration' });
-        }
-        if (phone && !validatePhone(phone)) {
-            return res.status(400).json({ message: 'Invalid phone number format' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        const existingUser = await User.findOne({ email: normalizedEmail });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email already registered' });
-        }
-
-        const user = new User({
-            name: name.trim(),
-            email: normalizedEmail,
-            password,
-            role: 'lecturer',
-            cabinNumber: cabinNumber.trim(),
-            department: (department || '').trim(),
-            phone: (phone || '').trim(),
-            isVerified: true
-        });
-        await user.save();
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(201).json({
-            message: 'Lecturer account created successfully',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, cabinNumber: user.cabinNumber, department: user.department, phone: user.phone },
-            token
-        });
-    } catch (err) {
-        console.error('Lecturer register error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { name, email, password, cabinNumber, department, phone } = req.body;
+    if (!validateName(name)) {
+      return res.status(400).json({ message: 'Invalid name' });
     }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    if (!validatePassword(password)) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+    if (!cabinNumber) {
+      return res.status(400).json({ message: 'Cabin number is required for lecturers' });
+    }
+    if (phone && !validatePhone(phone)) {
+      return res.status(400).json({ message: 'Invalid phone number' });
+    }
+
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    const result = await query(
+      `INSERT INTO users (name, email, password, cabin_number, department, phone, otp, otp_expires, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'lecturer')
+       RETURNING ${SAFE_USER_FIELDS}`,
+      [name.trim(), email.toLowerCase(), hashedPassword, cabinNumber.trim(), department ? department.trim() : null, phone ? phone.trim() : null, otp, otpExpires]
+    );
+
+    const user = result.rows[0];
+    const token = generateToken(user);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify Your Campus Bites Lecturer Account',
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 15 minutes.</p>`
+      });
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr);
+    }
+
+    res.status(201).json({
+      message: 'Lecturer registration successful. Please check your email for verification code.',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Lecturer register error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Lecturer Login ─────────────────────────────────────────────────────────
 router.post('/lecturer/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!password || typeof password !== 'string') {
-            return res.status(400).json({ message: 'Password is required' });
-        }
-
-        const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'lecturer' }).select('+password');
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.json({
-            message: 'Lecturer login successful',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, cabinNumber: user.cabinNumber, department: user.department, phone: user.phone },
-            token
-        });
-    } catch (err) {
-        console.error('Lecturer login error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
     }
+
+    const result = await query(
+      `SELECT * FROM users WHERE email = $1 AND role = 'lecturer'`,
+      [email.toLowerCase()]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      message: 'Lecturer login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Lecturer login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Delivery Register ─────────────────────────────────────────────────────
 router.post('/delivery/register', async (req, res) => {
-    try {
-        const { name, email, password, phone } = req.body;
-
-        if (!validateName(name)) {
-            return res.status(400).json({ message: 'Name must be 2-100 characters' });
-        }
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!validatePassword(password)) {
-            return res.status(400).json({ message: 'Password must be 8-128 characters with at least 1 uppercase, 1 lowercase, and 1 number' });
-        }
-        if (phone && !validatePhone(phone)) {
-            return res.status(400).json({ message: 'Invalid phone number format' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        const existing = await User.findOne({ email: normalizedEmail });
-        if (existing) {
-            return res.status(400).json({ message: 'Email already registered' });
-        }
-
-        const user = new User({
-            name: name.trim(),
-            email: normalizedEmail,
-            password,
-            phone: (phone || '').trim(),
-            role: 'delivery',
-            isVerified: true
-        });
-        await user.save();
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.status(201).json({
-            message: 'Delivery account created',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
-            token
-        });
-    } catch (err) {
-        console.error('Delivery register error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { name, email, password, phone } = req.body;
+    if (!validateName(name)) {
+      return res.status(400).json({ message: 'Invalid name' });
     }
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
+    if (!validatePassword(password)) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
+    if (!phone || !validatePhone(phone)) {
+      return res.status(400).json({ message: 'Valid phone number is required for delivery personnel' });
+    }
+
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const otp = generateOTP();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    const result = await query(
+      `INSERT INTO users (name, email, password, phone, otp, otp_expires, role)
+       VALUES ($1, $2, $3, $4, $5, $6, 'delivery')
+       RETURNING ${SAFE_USER_FIELDS}`,
+      [name.trim(), email.toLowerCase(), hashedPassword, phone.trim(), otp, otpExpires]
+    );
+
+    const user = result.rows[0];
+    const token = generateToken(user);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Verify Your Campus Bites Delivery Account',
+        html: `<p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 15 minutes.</p>`
+      });
+    } catch (emailErr) {
+      console.error('Failed to send verification email:', emailErr);
+    }
+
+    res.status(201).json({
+      message: 'Delivery registration successful. Please check your email for verification code.',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Delivery register error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
-// ─── Delivery Login ────────────────────────────────────────────────────────
 router.post('/delivery/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!validateEmail(email)) {
-            return res.status(400).json({ message: 'Invalid email format' });
-        }
-        if (!password || typeof password !== 'string') {
-            return res.status(400).json({ message: 'Password is required' });
-        }
-
-        const user = await User.findOne({ email: email.toLowerCase().trim(), role: 'delivery' }).select('+password');
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.json({
-            message: 'Login successful',
-            user: { id: user._id, name: user.name, email: user.email, role: user.role, phone: user.phone },
-            token
-        });
-    } catch (err) {
-        console.error('Delivery login error:', err.message);
-        res.status(500).json({ message: 'Server error' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
     }
+
+    const result = await query(
+      `SELECT * FROM users WHERE email = $1 AND role = 'delivery'`,
+      [email.toLowerCase()]
+    );
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+      message: 'Delivery login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      },
+      token
+    });
+  } catch (err) {
+    console.error('Delivery login error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;

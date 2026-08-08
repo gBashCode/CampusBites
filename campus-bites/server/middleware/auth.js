@@ -1,13 +1,11 @@
-const User = require('../models/User');
+const { query } = require('../db');
 const jwt = require('jsonwebtoken');
 
-// Safe fields to include from user document (never expose password, OTPs, etc.)
-const SAFE_USER_FIELDS = '_id name email role cabinNumber department phone isVerified createdAt';
+const SAFE_FIELDS = 'id, name, email, role, cabin_number, department, phone, is_verified, created_at';
 
-// JWT Authentication Middleware
 const verifyUser = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+  const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
     return res.status(401).json({ message: 'Unauthorized: No token provided' });
@@ -20,10 +18,18 @@ const verifyUser = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
-    const user = await User.findById(decoded.id).select(SAFE_USER_FIELDS);
+
+    const result = await query(
+      `SELECT ${SAFE_FIELDS} FROM users WHERE id = $1`,
+      [decoded.id]
+    );
+
+    const user = result.rows[0];
+
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized: User not found' });
     }
+
     req.user = user;
     next();
   } catch (err) {

@@ -1,18 +1,17 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "description": "Campus Bites Backend API",
+  "name": "campusbites-server",
+  "version": "2.0.0",
+  "description": "Campus Bites Backend API - PostgreSQL + Redis",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "migrate": "node migrations/run.js",
+    "seed": "node seed.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.5.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "express": "^5.2.1",
@@ -20,9 +19,13 @@
     "firebase-admin": "^14.2.0",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
+    "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^8.0.0",
+    "multer": "^2.0.1",
     "nodemailer": "^7.0.12",
-    "razorpay": "^2.9.6"
+    "pg": "^8.13.3",
+    "pg-pool": "^3.8.0",
+    "razorpay": "^2.9.6",
+    "uuid": "^11.1.0"
   }
 }

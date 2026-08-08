@@ -1,10 +1,13 @@
-const admin = require('firebase-admin');
+let admin;
+try { admin = require('firebase-admin'); } catch(e) { admin = null; }
 const path = require('path');
 const fs = require('fs');
 
 let firebaseInitialized = false;
 
-try {
+if (!admin) {
+    console.warn('WARNING: firebase-admin not installed. Push notifications disabled.');
+} else try {
     // Try loading from serviceAccountKey.json file first (local dev)
     const keyPath = path.join(__dirname, '..', 'serviceAccountKey.json');
     if (fs.existsSync(keyPath)) {
@@ -28,7 +31,7 @@ try {
 }
 
 const sendPushNotification = async (fcmToken, title, body, data = {}) => {
-    if (!firebaseInitialized || !fcmToken) return false;
+    if (!admin || !firebaseInitialized || !fcmToken) return false;
 
     try {
         await admin.messaging().send({

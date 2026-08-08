@@ -1,34 +1,28 @@
 services:
   - type: web
-    name: campus-bites-server
-    env: node
+    name: campus-bites-api
+    runtime: node
     plan: free
-    region: ohio
+    rootDir: campus-bites/server
     buildCommand: npm install
     startCommand: node index.js
-    rootDir: campus-bites/server
+    healthCheckPath: /
     envVars:
-      - key: PORT
-        value: 10000
-      - key: MONGO_URI
-        sync: false
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
       - key: JWT_SECRET
-        generateValue: true
-      - key: FRONTEND_URL
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: FRONTEND_URL
+        value: https://campusbites-phi.vercel.app
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
-        sync: false
-      - key: EMAIL_USER
-        sync: false
-      - key: EMAIL_PASS
-        sync: false
-      - key: WHATSAPP_ENABLED
-        value: "false"
-      - key: FIREBASE_SERVICE_ACCOUNT
         sync: false

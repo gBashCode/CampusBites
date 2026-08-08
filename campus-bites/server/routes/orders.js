@@ -1,471 +1,645 @@
 const express = require('express');
 const router = express.Router();
-const Order = require('../models/Order');
-const Product = require('../models/Product');
-const User = require('../models/User');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
+const { query, getClient } = require('../db');
 const { verifyUser, checkRole } = require('../middleware/auth');
-const { validateObjectId } = require('../utils/validators');
 const { sendWhatsAppMessage } = require('../utils/whatsapp');
 const { sendPushToUser } = require('../utils/firebase');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
 
-// Valid status transitions
-const VALID_STATUS_TRANSITIONS = {
-    pending: ['preparing', 'cancelled'],
-    preparing: ['ready', 'cancelled'],
-    ready: ['completed'],
-    completed: [],
-    cancelled: []
+const validateUUID = (id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+const VALID_STATUSES = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
+const STATUS_TRANSITIONS = {
+  pending: ['preparing', 'cancelled'],
+  preparing: ['ready', 'cancelled'],
+  ready: ['completed'],
 };
 
-let razorpay;
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
-    razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET
-    });
-} else {
-    console.warn('WARNING: Razorpay keys are missing. Payment routes will not function properly.');
-}
-
-// ─── Place Order ────────────────────────────────────────────────────────────
+// POST / - Place order
 router.post('/', verifyUser, async (req, res) => {
+  try {
+    const { items, pickupTime, deliveryType, cabinNumber } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items array is required and must not be empty' });
+    }
+
+    for (const item of items) {
+      if (!item.product || !item.quantity || item.quantity < 1) {
+        return res.status(400).json({ error: 'Each item must have a valid product ID and quantity >= 1' });
+      }
+    }
+
+    const client = await getClient();
     try {
-        const { items, pickupTime, deliveryType, cabinNumber } = req.body;
+      await client.query('BEGIN');
 
-        // Validate items array
-        if (!Array.isArray(items) || items.length === 0) {
-            return res.status(400).json({ message: 'Order must contain at least one item' });
-        }
+      const productIds = items.map((i) => i.product);
+      const productsResult = await client.query(
+        'SELECT * FROM products WHERE id = ANY($1) AND is_available = true',
+        [productIds]
+      );
+      const productMap = {};
+      for (const p of productsResult.rows) {
+        productMap[p.id] = p;
+      }
 
-        // Validate and recalculate from DB prices
-        let totalAmount = 0;
-        const validatedItems = [];
+      const missingProducts = productIds.filter((id) => !productMap[id]);
+      if (missingProducts.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Product(s) not found or unavailable: ${missingProducts.join(', ')}` });
+      }
 
-        for (const item of items) {
-            if (!item.product || !validateObjectId(item.product)) {
-                return res.status(400).json({ message: 'Invalid product ID in order' });
-            }
-            if (!item.quantity || typeof item.quantity !== 'number' || item.quantity < 1) {
-                return res.status(400).json({ message: 'Invalid quantity for product' });
-            }
-
-            const product = await Product.findById(item.product);
-            if (!product) {
-                return res.status(400).json({ message: `Product not found: ${item.product}` });
-            }
-            if (!product.isAvailable) {
-                return res.status(400).json({ message: `${product.name} is currently unavailable` });
-            }
-
-            totalAmount += product.price * item.quantity;
-            validatedItems.push({
-                product: product._id,
-                quantity: item.quantity,
-                price: product.price // Use DB price, not client price
-            });
-        }
-
-        // Add 5% tax
-        totalAmount = Math.round(totalAmount * 1.05);
-
-        const order = new Order({
-            user: req.user._id,
-            items: validatedItems,
-            totalAmount,
-            pickupTime: (typeof pickupTime === 'string' && pickupTime.trim()) || undefined,
-            deliveryType: deliveryType === 'cabin' ? 'cabin' : 'pickup',
-            cabinNumber: (typeof cabinNumber === 'string' && cabinNumber.trim()) || ''
+      let totalAmount = 0;
+      const orderItems = [];
+      for (const item of items) {
+        const product = productMap[item.product];
+        const itemPrice = product.price * item.quantity;
+        totalAmount += itemPrice;
+        orderItems.push({
+          product: product.id,
+          quantity: item.quantity,
+          price: product.price,
         });
+      }
 
-        await order.save();
-        res.status(201).json(order);
-    } catch (err) {
-        console.error('Error placing order:', err.message);
-        res.status(500).json({ message: 'Error placing order' });
-    }
-});
+      totalAmount = Math.round(totalAmount * 1.05);
 
-// ─── Get My Orders ──────────────────────────────────────────────────────────
-router.get('/mine', verifyUser, async (req, res) => {
-    try {
-        const { page = 1, limit = 20 } = req.query;
-        const pageNum = Math.max(1, parseInt(page));
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+      const orderResult = await client.query(
+        `INSERT INTO orders (user_id, total_amount, pickup_time, delivery_type, cabin_number, status)
+         VALUES ($1, $2, $3, $4, $5, 'pending') RETURNING *`,
+        [req.user.id, totalAmount, pickupTime || null, deliveryType || 'pickup', cabinNumber || null]
+      );
+      const order = orderResult.rows[0];
 
-        const orders = await Order.find({ user: req.user._id })
-            .populate('items.product', 'name price image category isVeg')
-            .sort({ createdAt: -1 })
-            .skip((pageNum - 1) * limitNum)
-            .limit(limitNum);
-
-        const total = await Order.countDocuments({ user: req.user._id });
-
-        res.json({
-            orders,
-            pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) }
-        });
-    } catch (err) {
-        console.error('Error fetching orders:', err.message);
-        res.status(500).json({ message: 'Error fetching orders' });
-    }
-});
-
-// ─── Get Active Orders (Staff/Admin) ────────────────────────────────────────
-router.get('/staff/active', verifyUser, checkRole(['admin', 'staff']), async (req, res) => {
-    try {
-        const { status, page = 1, limit = 50 } = req.query;
-        let query = { status: { $ne: 'cancelled' } };
-        if (status && ['pending', 'preparing', 'ready', 'completed'].includes(status)) {
-            query.status = status;
-        }
-
-        const pageNum = Math.max(1, parseInt(page));
-        const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-
-        const [orders, total] = await Promise.all([
-            Order.find(query)
-                .populate('items.product', 'name price image')
-                .populate('user', 'name email phone cabinNumber department role')
-                .sort({ createdAt: -1 })
-                .skip((pageNum - 1) * limitNum)
-                .limit(limitNum),
-            Order.countDocuments(query)
-        ]);
-
-        res.json({
-            orders,
-            pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) }
-        });
-    } catch (err) {
-        console.error('Error fetching active orders:', err.message);
-        res.status(500).json({ message: 'Error fetching active orders' });
-    }
-});
-
-// ─── Update Order Status (Staff/Admin) ──────────────────────────────────────
-router.put('/:id/status', verifyUser, checkRole(['admin', 'staff']), async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        if (!status || !['pending', 'preparing', 'ready', 'completed', 'cancelled'].includes(status)) {
-            return res.status(400).json({ message: 'Invalid status value' });
-        }
-
-        if (!validateObjectId(req.params.id)) {
-            return res.status(400).json({ message: 'Invalid order ID' });
-        }
-
-        const currentOrder = await Order.findById(req.params.id);
-        if (!currentOrder) {
-            return res.status(404).json({ message: 'Order not found' });
-        }
-
-        // Validate status transition
-        const allowedTransitions = VALID_STATUS_TRANSITIONS[currentOrder.status] || [];
-        if (!allowedTransitions.includes(status)) {
-            return res.status(400).json({ message: `Cannot transition from ${currentOrder.status} to ${status}` });
-        }
-
-        let update = { $set: { status } };
-        if (status === 'completed') {
-            update.$set.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        } else {
-            update.$unset = { expiresAt: "" };
-        }
-
-        const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true })
-            .populate('user', 'name phone role cabinNumber')
-            .populate('items.product', 'name');
-
-        // Send WhatsApp notification
-        if (order && order.user?.phone) {
-            let statusEmoji = '🔔';
-            let statusDesc = '';
-
-            if (status === 'preparing') {
-                statusEmoji = '👨‍🍳';
-                statusDesc = 'Your meal is now being prepared by our chef.';
-            } else if (status === 'ready') {
-                statusEmoji = '📦';
-                statusDesc = order.cabinNumber
-                    ? `Your order is ready and has been dispatched for delivery to Cabin ${order.cabinNumber}!`
-                    : 'Your order is ready for pickup! Please head to the main canteen counter.';
-            } else if (status === 'completed') {
-                statusEmoji = '✅';
-                statusDesc = 'Your order has been handed over. Enjoy your delicious meal!';
-            } else if (status === 'cancelled') {
-                statusEmoji = '❌';
-                statusDesc = 'Your order has been cancelled. If this is unexpected, please contact the canteen counter.';
-            }
-
-            if (statusDesc) {
-                const message = `${statusEmoji} *Campus Bites - Order Update!*\n\nOrder ID: #${order._id.toString().slice(-6).toUpperCase()}\nStatus: *${status.toUpperCase()}*\n\n${statusDesc}\n\nThank you for choosing Campus Bites!`;
-                sendWhatsAppMessage(order.user.phone, message).catch(() => {});
-            }
-        }
-
-        // Send FCM push notification
-        if (order?.user?._id) {
-            try {
-                const fullUser = await User.findById(order.user._id).select('+fcmTokens');
-                if (fullUser) {
-                    const statusMsg = {
-                        preparing: { title: 'Order Being Prepared! 👨‍🍳', body: 'Your meal is now being prepared.' },
-                        ready: { title: 'Order Ready! 📦', body: order.cabinNumber ? `Ready for delivery to Cabin ${order.cabinNumber}` : 'Your order is ready for pickup!' },
-                        completed: { title: 'Order Complete! ✅', body: 'Your order has been handed over. Enjoy!' },
-                        cancelled: { title: 'Order Cancelled ❌', body: 'Your order has been cancelled.' },
-                    };
-
-                    const msg = statusMsg[status];
-                    if (msg) {
-                        const invalidTokens = await sendPushToUser(fullUser, msg.title, msg.body, {
-                            tag: `order-${order._id}`,
-                            link: '/dashboard/orders',
-                        });
-
-                        // Clean up invalid tokens
-                        if (invalidTokens && invalidTokens.length > 0) {
-                            await User.findByIdAndUpdate(fullUser._id, {
-                                $pull: { fcmTokens: { $in: invalidTokens } }
-                            });
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error('FCM notification error:', e.message);
-            }
-        }
-
-        res.json(order);
-    } catch (err) {
-        console.error('Error updating order status:', err.message);
-        res.status(500).json({ message: 'Error updating order status' });
-    }
-});
-
-// ─── Cancel Order (User can cancel their own pending/preparing orders) ──────
-router.post('/:id/cancel', verifyUser, async (req, res) => {
-    try {
-        if (!validateObjectId(req.params.id)) {
-            return res.status(400).json({ message: 'Invalid order ID' });
-        }
-
-        const order = await Order.findById(req.params.id);
-        if (!order) {
-            return res.status(404).json({ message: 'Order not found' });
-        }
-
-        if (order.user.toString() !== req.user._id.toString()) {
-            return res.status(403).json({ message: 'Not authorized to cancel this order' });
-        }
-
-        if (!['pending', 'preparing'].includes(order.status)) {
-            return res.status(400).json({ message: 'Order cannot be cancelled in its current status' });
-        }
-
-        order.status = 'cancelled';
-        await order.save();
-
-        res.json({ message: 'Order cancelled', order });
-    } catch (err) {
-        console.error('Error cancelling order:', err.message);
-        res.status(500).json({ message: 'Error cancelling order' });
-    }
-});
-
-// ─── Create Razorpay Order ─────────────────────────────────────────────────
-router.post('/razorpay', verifyUser, async (req, res) => {
-    if (!razorpay) {
-        return res.status(503).json({ message: 'Payment gateway not configured' });
-    }
-    try {
-        const { amount } = req.body;
-        if (typeof amount !== 'number' || amount <= 0 || amount > 100000) {
-            return res.status(400).json({ message: 'Invalid payment amount' });
-        }
-
-        const options = {
-            amount: Math.round(amount * 100),
-            currency: "INR",
-            receipt: `receipt_${Date.now()}`,
-        };
-
-        const order = await razorpay.orders.create(options);
-        res.json({ ...order, key_id: process.env.RAZORPAY_KEY_ID });
-    } catch (err) {
-        console.error('Razorpay Error:', err.message);
-        res.status(500).json({ message: 'Error creating payment order' });
-    }
-});
-
-// ─── Verify Payment ────────────────────────────────────────────────────────
-router.post('/verify', verifyUser, async (req, res) => {
-    if (!razorpay) {
-        return res.status(503).json({ message: 'Payment gateway not configured' });
-    }
-    try {
-        const {
-            razorpay_order_id,
-            razorpay_payment_id,
-            razorpay_signature,
-            orderData
-        } = req.body;
-
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ message: 'Missing payment verification data' });
-        }
-
-        if (!orderData || !Array.isArray(orderData.items) || orderData.items.length === 0) {
-            return res.status(400).json({ message: 'Invalid order data' });
-        }
-
-        // Timing-safe signature comparison
-        const sign = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSign = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-            .update(sign.toString())
-            .digest("hex");
-
-        const expectedBuffer = Buffer.from(expectedSign, 'hex');
-        const receivedBuffer = Buffer.from(razorpay_signature, 'hex');
-
-        if (expectedBuffer.length !== receivedBuffer.length || !crypto.timingSafeEqual(expectedBuffer, receivedBuffer)) {
-            return res.status(400).json({ message: "Invalid payment signature" });
-        }
-
-        // Recalculate total from DB prices (never trust client totalAmount)
-        let totalAmount = 0;
-        const validatedItems = [];
-
-        for (const item of orderData.items) {
-            if (!item.product || !validateObjectId(item.product)) {
-                return res.status(400).json({ message: 'Invalid product in order data' });
-            }
-            const product = await Product.findById(item.product);
-            if (!product) {
-                return res.status(400).json({ message: `Product not found: ${item.product}` });
-            }
-            totalAmount += product.price * (item.quantity || 1);
-            validatedItems.push({
-                product: product._id,
-                quantity: item.quantity || 1,
-                price: product.price
-            });
-        }
-
-        totalAmount = Math.round(totalAmount * 1.05);
-
-        const order = new Order({
-            user: req.user._id,
-            items: validatedItems,
-            totalAmount,
-            pickupTime: orderData.pickupTime || '',
-            deliveryType: orderData.deliveryType || 'pickup',
-            cabinNumber: orderData.cabinNumber || '',
-            paymentStatus: 'paid',
-            razorpayOrderId: razorpay_order_id,
-            razorpayPaymentId: razorpay_payment_id,
-            razorpaySignature: razorpay_signature
-        });
-
-        await order.save();
-
-        // Populate for WhatsApp notification
-        const populatedOrder = await Order.findById(order._id)
-            .populate('user', 'name phone cabinNumber role')
-            .populate('items.product', 'name');
-
-        if (populatedOrder && populatedOrder.user?.phone) {
-            const itemsList = populatedOrder.items.map(item => `- ${item.quantity}x ${item.product?.name || 'Item'}`).join('\n');
-            const pickupText = populatedOrder.cabinNumber ? `Cabin ${populatedOrder.cabinNumber}` : populatedOrder.pickupTime;
-
-            const message = `🍔 *Campus Bites - Order Placed!*\n\nHi ${populatedOrder.user.name || 'Customer'},\nYour order has been placed successfully!\n\n*Order ID*: #${populatedOrder._id.toString().slice(-6).toUpperCase()}\n*Items*:\n${itemsList}\n*Total Paid*: ₹${populatedOrder.totalAmount}\n*Delivery/Pickup Slot*: ${pickupText}\n\nWe will notify you when preparation starts. Thank you!`;
-
-            sendWhatsAppMessage(populatedOrder.user.phone, message).catch(() => {});
-        }
-
-        // Send FCM push notification for order placed
-        try {
-            const orderUser = await User.findById(req.user._id).select('+fcmTokens');
-            if (orderUser) {
-                const itemsList = validatedItems.map(i => i.quantity + 'x item').join(', ');
-                const invalidTokens = await sendPushToUser(
-                    orderUser,
-                    'Order Placed! 🍔',
-                    `Your order has been placed. Total: ₹${totalAmount}`,
-                    { tag: `order-${order._id}`, link: '/dashboard/orders' }
-                );
-                if (invalidTokens && invalidTokens.length > 0) {
-                    await User.findByIdAndUpdate(orderUser._id, {
-                        $pull: { fcmTokens: { $in: invalidTokens } }
-                    });
-                }
-            }
-        } catch (e) {
-            console.error('FCM order placed notification error:', e.message);
-        }
-
-        return res.status(200).json({ message: "Payment verified successfully", order });
-    } catch (err) {
-        console.error('Verification Error:', err.message);
-        res.status(500).json({ message: "Payment verification failed" });
-    }
-});
-
-// ─── Delivery: Active delivery orders ──────────────────────────────────────
-router.get('/delivery/active', verifyUser, checkRole(['delivery', 'admin', 'staff']), async (req, res) => {
-    try {
-        const orders = await Order.find({ status: { $in: ['ready', 'preparing', 'pending'] } })
-            .populate('items.product', 'name price image category')
-            .populate('user', 'name email phone cabinNumber department role')
-            .sort({ createdAt: 1 });
-
-        const deliveryOrders = orders.filter(order =>
-            order.deliveryType === 'cabin' ||
-            (order.cabinNumber && order.cabinNumber.trim() !== '')
+      for (const item of orderItems) {
+        await client.query(
+          'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
+          [order.id, item.product, item.quantity, item.price]
         );
+      }
 
-        res.json(deliveryOrders);
-    } catch (err) {
-        console.error('Error fetching delivery orders:', err.message);
-        res.status(500).json({ message: 'Error fetching delivery orders' });
+      await client.query('COMMIT');
+
+      const fullOrder = await getOrderById(order.id);
+      res.status(201).json(fullOrder);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
     }
+  } catch (err) {
+    console.error('Place order error:', err);
+    res.status(500).json({ error: 'Failed to place order' });
+  }
 });
 
-// ─── Delivery: Mark order as delivered ─────────────────────────────────────
-router.put('/delivery/:id/complete', verifyUser, checkRole(['delivery', 'admin', 'staff']), async (req, res) => {
+// GET /mine - Get current user's orders
+router.get('/mine', verifyUser, async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+    const offset = (page - 1) * limit;
+
+    const countResult = await query('SELECT COUNT(*) FROM orders WHERE user_id = $1', [req.user.id]);
+    const total = parseInt(countResult.rows[0].count);
+
+    const ordersResult = await query(
+      `SELECT o.*,
+        json_agg(
+          json_build_object(
+            'id', oi.id,
+            'product', json_build_object(
+              'id', p.id, 'name', p.name, 'price', p.price,
+              'image', p.image, 'category', p.category, 'is_veg', p.is_veg
+            ),
+            'quantity', oi.quantity,
+            'price', oi.price
+          )
+        ) AS items
+       FROM orders o
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE o.user_id = $1
+       GROUP BY o.id
+       ORDER BY o.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, limit, offset]
+    );
+
+    const orders = ordersResult.rows.map((o) => ({
+      ...o,
+      items: o.items[0]?.id ? o.items : [],
+    }));
+
+    res.json({
+      orders,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error('Get my orders error:', err);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// GET /staff/active - Get active orders (admin/staff only)
+router.get('/staff/active', verifyUser, checkRole(['admin', 'staff']), async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const { status } = req.query;
+
+    let whereClause = "o.status != 'cancelled'";
+    const params = [];
+
+    if (status && VALID_STATUSES.includes(status)) {
+      params.push(status);
+      whereClause = `o.status = $${params.length}`;
+    }
+
+    const countResult = await query(
+      `SELECT COUNT(*) FROM orders o WHERE ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    const queryParams = [...params, limit, offset];
+    const ordersResult = await query(
+      `SELECT o.*,
+        json_build_object('id', u.id, 'name', u.name, 'phone', u.phone, 'email', u.email) AS user,
+        json_agg(
+          json_build_object(
+            'id', oi.id,
+            'product', json_build_object(
+              'id', p.id, 'name', p.name, 'price', p.price,
+              'image', p.image, 'category', p.category, 'is_veg', p.is_veg
+            ),
+            'quantity', oi.quantity,
+            'price', oi.price
+          )
+        ) AS items
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE ${whereClause}
+       GROUP BY o.id, u.id
+       ORDER BY o.created_at DESC
+       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      queryParams
+    );
+
+    const orders = ordersResult.rows.map((o) => ({
+      ...o,
+      items: o.items[0]?.id ? o.items : [],
+    }));
+
+    res.json({
+      orders,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error('Get active orders error:', err);
+    res.status(500).json({ error: 'Failed to fetch active orders' });
+  }
+});
+
+// PUT /:id/status - Update order status (admin/staff only)
+router.put('/:id/status', verifyUser, checkRole(['admin', 'staff']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!validateUUID(id)) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    const { status } = req.body;
+    if (!status || !VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}` });
+    }
+
+    const orderResult = await query(
+      `SELECT o.*, json_build_object('id', u.id, 'name', u.name, 'phone', u.phone, 'email', u.email) AS user
+       FROM orders o LEFT JOIN users u ON o.user_id = u.id WHERE o.id = $1`,
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      return res.status(400).json({ error: `Cannot change status of ${order.status} order` });
+    }
+
+    const allowed = STATUS_TRANSITIONS[order.status];
+    if (!allowed || !allowed.includes(status)) {
+      return res.status(400).json({
+        error: `Cannot transition from '${order.status}' to '${status}'. Allowed: ${allowed ? allowed.join(', ') : 'none'}`,
+      });
+    }
+
+    const client = await getClient();
     try {
-        if (!validateObjectId(req.params.id)) {
-            return res.status(400).json({ message: 'Invalid order ID' });
+      await client.query('BEGIN');
+
+      const updatedResult = await client.query(
+        'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+      const updatedOrder = updatedResult.rows[0];
+
+      await client.query('COMMIT');
+
+      const fullOrder = {
+        ...updatedOrder,
+        user: order.user,
+      };
+
+      // WhatsApp notification
+      try {
+        if (order.user && order.user.phone) {
+          const statusMessages = {
+            preparing: `Your order #${id.slice(0, 8)} is being prepared!`,
+            ready: `Your order #${id.slice(0, 8)} is ready for pickup!`,
+            completed: `Your order #${id.slice(0, 8)} has been completed. Thank you!`,
+            cancelled: `Your order #${id.slice(0, 8)} has been cancelled.`,
+          };
+          if (statusMessages[status]) {
+            await sendWhatsAppMessage(order.user.phone, statusMessages[status]);
+          }
         }
+      } catch (whatsappErr) {
+        console.error('WhatsApp notification error:', whatsappErr);
+      }
 
-        const currentOrder = await Order.findById(req.params.id);
-        if (!currentOrder) {
-            return res.status(404).json({ message: 'Order not found' });
+      // FCM notification
+      try {
+        if (order.user_id) {
+          const userResult = await query('SELECT fcm_tokens FROM users WHERE id = $1', [order.user_id]);
+          const user = userResult.rows[0];
+          if (user && user.fcm_tokens && user.fcm_tokens.length > 0) {
+            const validTokens = [];
+            for (const token of user.fcm_tokens) {
+              try {
+                await sendPushToUser(token, {
+                  title: 'Order Update',
+                  body: `Your order status has changed to: ${status}`,
+                  data: { orderId: id },
+                });
+                validTokens.push(token);
+              } catch (fcmErr) {
+                console.error('FCM token invalid, removing:', token, fcmErr.message);
+              }
+            }
+            if (validTokens.length !== user.fcm_tokens.length) {
+              await query('UPDATE users SET fcm_tokens = $1 WHERE id = $2', [validTokens, order.user_id]);
+            }
+          }
         }
+      } catch (fcmErr) {
+        console.error('FCM notification error:', fcmErr);
+      }
 
-        if (currentOrder.status !== 'ready') {
-            return res.status(400).json({ message: 'Order is not ready for delivery' });
-        }
-
-        const order = await Order.findByIdAndUpdate(
-            req.params.id,
-            { $set: { status: 'completed', expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) } },
-            { new: true }
-        ).populate('user', 'name phone role cabinNumber');
-
-        if (order.user?.phone) {
-            const message = `✅ *Campus Bites - Delivered!*\n\nHi ${order.user.name},\nYour order #${order._id.toString().slice(-6).toUpperCase()} has been successfully delivered to Cabin ${order.cabinNumber || 'your cabin'}.\n\nEnjoy your meal!`;
-            sendWhatsAppMessage(order.user.phone, message).catch(() => {});
-        }
-
-        res.json({ message: 'Order marked as delivered', order });
-    } catch (err) {
-        console.error('Error completing order:', err.message);
-        res.status(500).json({ message: 'Error completing order' });
+      res.json(fullOrder);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
     }
+  } catch (err) {
+    console.error('Update order status error:', err);
+    res.status(500).json({ error: 'Failed to update order status' });
+  }
 });
+
+// POST /:id/cancel - Cancel own order
+router.post('/:id/cancel', verifyUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!validateUUID(id)) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND user_id = $2', [id, req.user.id]);
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+    if (!['pending', 'preparing'].includes(order.status)) {
+      return res.status(400).json({ error: `Cannot cancel order with status '${order.status}'` });
+    }
+
+    const updatedResult = await query(
+      "UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    res.json(updatedResult.rows[0]);
+  } catch (err) {
+    console.error('Cancel order error:', err);
+    res.status(500).json({ error: 'Failed to cancel order' });
+  }
+});
+
+// POST /razorpay - Create Razorpay order
+router.post('/razorpay', verifyUser, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount is required' });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100),
+      currency: 'INR',
+      receipt: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+    });
+
+    res.json(order);
+  } catch (err) {
+    console.error('Razorpay order error:', err);
+    res.status(500).json({ error: 'Failed to create Razorpay order' });
+  }
+});
+
+// POST /verify - Verify Razorpay payment
+router.post('/verify', verifyUser, async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderData) {
+      return res.status(400).json({ error: 'Missing required payment verification fields' });
+    }
+
+    // Timing-safe signature verification
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(body)
+      .digest('hex');
+
+    const signatureBuffer = Buffer.from(razorpay_signature, 'hex');
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+
+    if (signatureBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)) {
+      return res.status(400).json({ error: 'Invalid payment signature' });
+    }
+
+    // Verify and recalculate from DB (never trust client)
+    const { items, pickupTime, deliveryType, cabinNumber } = orderData;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items array is required' });
+    }
+
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+
+      const productIds = items.map((i) => i.product);
+      const productsResult = await client.query(
+        'SELECT * FROM products WHERE id = ANY($1) AND is_available = true',
+        [productIds]
+      );
+      const productMap = {};
+      for (const p of productsResult.rows) {
+        productMap[p.id] = p;
+      }
+
+      const missingProducts = productIds.filter((id) => !productMap[id]);
+      if (missingProducts.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: `Product(s) not found or unavailable: ${missingProducts.join(', ')}` });
+      }
+
+      let totalAmount = 0;
+      const orderItems = [];
+      for (const item of items) {
+        const product = productMap[item.product];
+        const itemPrice = product.price * item.quantity;
+        totalAmount += itemPrice;
+        orderItems.push({
+          product: product.id,
+          quantity: item.quantity,
+          price: product.price,
+        });
+      }
+
+      totalAmount = Math.round(totalAmount * 1.05);
+
+      const orderResult = await client.query(
+        `INSERT INTO orders (user_id, total_amount, pickup_time, delivery_type, cabin_number, status, razorpay_order_id, razorpay_payment_id, payment_status)
+         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, 'paid') RETURNING *`,
+        [req.user.id, totalAmount, pickupTime || null, deliveryType || 'pickup', cabinNumber || null, razorpay_order_id, razorpay_payment_id]
+      );
+      const order = orderResult.rows[0];
+
+      for (const item of orderItems) {
+        await client.query(
+          'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
+          [order.id, item.product, item.quantity, item.price]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      // Fetch full order with user details
+      const fullOrderResult = await query(
+        `SELECT o.*,
+          json_build_object('id', u.id, 'name', u.name, 'phone', u.phone, 'email', u.email) AS user,
+          json_agg(
+            json_build_object(
+              'id', oi.id,
+              'product', json_build_object(
+                'id', p.id, 'name', p.name, 'price', p.price,
+                'image', p.image, 'category', p.category, 'is_veg', p.is_veg
+              ),
+              'quantity', oi.quantity,
+              'price', oi.price
+            )
+          ) AS items
+         FROM orders o
+         LEFT JOIN users u ON o.user_id = u.id
+         LEFT JOIN order_items oi ON o.id = oi.order_id
+         LEFT JOIN products p ON oi.product_id = p.id
+         WHERE o.id = $1
+         GROUP BY o.id, u.id`,
+        [order.id]
+      );
+
+      const fullOrder = fullOrderResult.rows[0];
+
+      // WhatsApp notification
+      try {
+        if (fullOrder.user && fullOrder.user.phone) {
+          await sendWhatsAppMessage(
+            fullOrder.user.phone,
+            `Payment confirmed! Your order #${order.id.slice(0, 8)} has been placed successfully. Total: ₹${totalAmount}`
+          );
+        }
+      } catch (whatsappErr) {
+        console.error('WhatsApp notification error:', whatsappErr);
+      }
+
+      // FCM notification
+      try {
+        const userResult = await query('SELECT fcm_tokens FROM users WHERE id = $1', [req.user.id]);
+        const user = userResult.rows[0];
+        if (user && user.fcm_tokens && user.fcm_tokens.length > 0) {
+          const validTokens = [];
+          for (const token of user.fcm_tokens) {
+            try {
+              await sendPushToUser(token, {
+                title: 'Order Placed',
+                body: `Your order #${order.id.slice(0, 8)} has been placed successfully!`,
+                data: { orderId: order.id },
+              });
+              validTokens.push(token);
+            } catch (fcmErr) {
+              console.error('FCM token invalid, removing:', token, fcmErr.message);
+            }
+          }
+          if (validTokens.length !== user.fcm_tokens.length) {
+            await query('UPDATE users SET fcm_tokens = $1 WHERE id = $2', [validTokens, req.user.id]);
+          }
+        }
+      } catch (fcmErr) {
+        console.error('FCM notification error:', fcmErr);
+      }
+
+      res.status(201).json(fullOrder);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Verify payment error:', err);
+    res.status(500).json({ error: 'Failed to verify payment and place order' });
+  }
+});
+
+// GET /delivery/active - Get delivery orders
+router.get('/delivery/active', verifyUser, checkRole(['delivery', 'admin', 'staff']), async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const countResult = await query(
+      "SELECT COUNT(*) FROM orders WHERE (delivery_type = 'cabin' OR cabin_number IS NOT NULL) AND status != 'cancelled'"
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    const ordersResult = await query(
+      `SELECT o.*,
+        json_build_object('id', u.id, 'name', u.name, 'phone', u.phone, 'email', u.email) AS user,
+        json_agg(
+          json_build_object(
+            'id', oi.id,
+            'product', json_build_object(
+              'id', p.id, 'name', p.name, 'price', p.price,
+              'image', p.image, 'category', p.category, 'is_veg', p.is_veg
+            ),
+            'quantity', oi.quantity,
+            'price', oi.price
+          )
+        ) AS items
+       FROM orders o
+       LEFT JOIN users u ON o.user_id = u.id
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE (o.delivery_type = 'cabin' OR o.cabin_number IS NOT NULL) AND o.status != 'cancelled'
+       GROUP BY o.id, u.id
+       ORDER BY o.created_at DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const orders = ordersResult.rows.map((o) => ({
+      ...o,
+      items: o.items[0]?.id ? o.items : [],
+    }));
+
+    res.json({
+      orders,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error('Get delivery orders error:', err);
+    res.status(500).json({ error: 'Failed to fetch delivery orders' });
+  }
+});
+
+// PUT /delivery/:id/complete - Mark order delivered
+router.put('/delivery/:id/complete', verifyUser, checkRole(['delivery', 'admin', 'staff']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!validateUUID(id)) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+    if (order.status !== 'ready') {
+      return res.status(400).json({ error: `Cannot complete order with status '${order.status}'. Must be 'ready'.` });
+    }
+
+    const updatedResult = await query(
+      "UPDATE orders SET status = 'completed', updated_at = NOW() WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    res.json(updatedResult.rows[0]);
+  } catch (err) {
+    console.error('Complete delivery order error:', err);
+    res.status(500).json({ error: 'Failed to complete order' });
+  }
+});
+
+// Helper: fetch full order by ID
+async function getOrderById(orderId) {
+  const result = await query(
+    `SELECT o.*,
+      json_build_object('id', u.id, 'name', u.name, 'phone', u.phone, 'email', u.email) AS user,
+      json_agg(
+        json_build_object(
+          'id', oi.id,
+          'product', json_build_object(
+            'id', p.id, 'name', p.name, 'price', p.price,
+            'image', p.image, 'category', p.category, 'is_veg', p.is_veg
+          ),
+          'quantity', oi.quantity,
+          'price', oi.price
+        )
+      ) AS items
+     FROM orders o
+     LEFT JOIN users u ON o.user_id = u.id
+     LEFT JOIN order_items oi ON o.id = oi.order_id
+     LEFT JOIN products p ON oi.product_id = p.id
+     WHERE o.id = $1
+     GROUP BY o.id, u.id`,
+    [orderId]
+  );
+  const order = result.rows[0];
+  order.items = order.items[0]?.id ? order.items : [];
+  return order;
+}
 
 module.exports = router;
