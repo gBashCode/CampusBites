@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react'
 import SplashScreen from './components/SplashScreen'
+import A2HSPrompt from './components/A2HSPrompt'
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
@@ -106,6 +107,7 @@ function App() {
             <WebSocketProvider>
             <CartProvider>
                 <Router>
+                    <A2HSPrompt />
                     <ErrorBoundary>
                     <Suspense fallback={<LoadingContainer />}>
                     <Routes>
