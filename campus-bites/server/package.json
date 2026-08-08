@@ -7,7 +7,8 @@
     "start": "node index.js",
     "dev": "node index.js",
     "migrate": "node migrations/run.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "test": "jest --forceExit --detectOpenHandles"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -16,6 +17,7 @@
     "dotenv": "^16.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.4.1",
+    "express-validator": "^7.3.2",
     "firebase-admin": "^14.2.0",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
@@ -26,6 +28,10 @@
     "pg": "^8.13.3",
     "pg-pool": "^3.8.0",
     "razorpay": "^2.9.6",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2"
   }
 }

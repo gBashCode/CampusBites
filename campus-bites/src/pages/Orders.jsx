@@ -4,6 +4,7 @@ import { Package, RefreshCw, Clock } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
+import { useWebSocket } from '../context/WebSocketContext';
 import { StatusChip, EmptyState, ErrorDisplay, LoadingContainer, PrimaryButton } from '../components/ui';
 import API_URL from '../apiConfig';
 
@@ -34,6 +35,7 @@ const Orders = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const toast = useToast();
+  const { orderUpdates } = useWebSocket();
 
   const fetchOrders = useCallback(async () => {
     if (!user?.id) { setLoading(false); setRefreshing(false); return; }
@@ -55,6 +57,16 @@ const Orders = () => {
     const id = setInterval(fetchOrders, 15000);
     return () => clearInterval(id);
   }, [user?.id, fetchOrders]);
+
+  React.useEffect(() => {
+    if (orderUpdates.length === 0) return;
+    const latest = orderUpdates[0];
+    setOrders(prev => prev.map(order =>
+      order.id === latest.order.id
+        ? { ...order, status: latest.order.status, updated_at: latest.order.updatedAt }
+        : order
+    ));
+  }, [orderUpdates]);
 
   const handleReorder = (order) => {
     const unavailable = order.items.some(i => i.product?.isAvailable === false);

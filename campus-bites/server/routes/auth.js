@@ -8,6 +8,7 @@ const { query } = require('../db');
 const { validateEmail, validatePassword, validateName, validatePhone } = require('../utils/validators');
 const { verifyUser } = require('../middleware/auth');
 const sendEmail = require('../utils/sendEmail');
+const { handleValidation, registerRules, loginRules, otpRules, forgotPasswordRules, resetPasswordRules } = require('../utils/validationMiddleware');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -21,7 +22,7 @@ function generateOTP() {
   return crypto.randomInt(100000, 999999).toString();
 }
 
-router.post('/register', async (req, res) => {
+router.post('/register', registerRules, handleValidation, async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!validateName(name)) {
@@ -79,7 +80,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/verify-otp', async (req, res) => {
+router.post('/verify-otp', otpRules, handleValidation, async (req, res) => {
   try {
     const { userId, email, otp } = req.body;
     if (!userId || !email || !otp) {
@@ -130,7 +131,7 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginRules, handleValidation, async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -170,7 +171,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', forgotPasswordRules, handleValidation, async (req, res) => {
   try {
     const { email } = req.body;
     const standardMessage = { message: 'If an account exists with that email, a reset code has been sent.' };
@@ -211,7 +212,7 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', resetPasswordRules, handleValidation, async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
     if (!email || !otp || !newPassword) {

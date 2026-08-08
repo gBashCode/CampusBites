@@ -1,11 +1,13 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Home, ShoppingBag, User, Receipt } from 'lucide-react';
+import { Home, ShoppingBag, User, Receipt, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
     const { cartCount } = useCart();
     const location = useLocation();
+    const { theme, toggleTheme } = useTheme();
 
     const isActive = (path) => location.pathname === path;
 
@@ -24,12 +26,65 @@ const Dashboard = () => {
             paddingBottom: '80px'
         }}>
             <a href="#main-content" className="skip-to-content">Skip to content</a>
+
+            {/* Header */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                zIndex: 999,
+                display: 'flex',
+                justifyContent: 'center',
+                padding: '16px',
+                pointerEvents: 'none'
+            }}>
+                <div style={{
+                    width: '100%',
+                    maxWidth: '600px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    pointerEvents: 'auto'
+                }}>
+                    <h1 style={{
+                        fontSize: 'var(--text-xl)',
+                        fontWeight: 800,
+                        margin: 0,
+                        letterSpacing: '-0.5px'
+                    }}>
+                        Campus<span style={{ color: 'var(--primary)' }}>Bites</span>
+                    </h1>
+                    <button
+                        onClick={toggleTheme}
+                        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                        style={{
+                            background: 'var(--glass-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '8px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--text-main)',
+                            backdropFilter: 'blur(10px)',
+                            WebkitBackdropFilter: 'blur(10px)',
+                            transition: 'all 0.2s ease'
+                        }}
+                    >
+                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+                </div>
+            </div>
+
             <main id="main-content" style={{
                 width: '100%',
                 maxWidth: '600px',
                 margin: '0 auto',
                 minHeight: '100vh',
-                position: 'relative'
+                position: 'relative',
+                paddingTop: '60px'
             }}>
                 <Outlet />
             </main>

@@ -306,6 +306,19 @@ router.put('/:id/status', verifyUser, checkRole(['admin', 'staff']), async (req,
       }
 
       res.json(fullOrder);
+
+      // Broadcast real-time update
+      const broadcastToUser = req.app.get('broadcastToUser');
+      if (broadcastToUser) {
+        broadcastToUser(order.user_id, {
+          type: 'ORDER_STATUS_UPDATED',
+          order: {
+            id: updatedOrder.id,
+            status: updatedOrder.status,
+            updatedAt: updatedOrder.updated_at,
+          }
+        });
+      }
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
@@ -340,6 +353,19 @@ router.post('/:id/cancel', verifyUser, async (req, res) => {
       "UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1 RETURNING *",
       [id]
     );
+
+    // Broadcast real-time update
+    const broadcastToUser = req.app.get('broadcastToUser');
+    if (broadcastToUser) {
+      broadcastToUser(req.user.id, {
+        type: 'ORDER_STATUS_UPDATED',
+        order: {
+          id: updatedResult.rows[0].id,
+          status: updatedResult.rows[0].status,
+          updatedAt: updatedResult.rows[0].updated_at,
+        }
+      });
+    }
 
     res.json(updatedResult.rows[0]);
   } catch (err) {
@@ -605,6 +631,19 @@ router.put('/delivery/:id/complete', verifyUser, checkRole(['delivery', 'admin',
       "UPDATE orders SET status = 'completed', updated_at = NOW() WHERE id = $1 RETURNING *",
       [id]
     );
+
+    // Broadcast real-time update
+    const broadcastToUser = req.app.get('broadcastToUser');
+    if (broadcastToUser) {
+      broadcastToUser(order.user_id, {
+        type: 'ORDER_STATUS_UPDATED',
+        order: {
+          id: updatedResult.rows[0].id,
+          status: updatedResult.rows[0].status,
+          updatedAt: updatedResult.rows[0].updated_at,
+        }
+      });
+    }
 
     res.json(updatedResult.rows[0]);
   } catch (err) {

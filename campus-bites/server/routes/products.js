@@ -23,6 +23,33 @@ const dbRowToProduct = (row) => ({
     updatedAt: row.updated_at,
 });
 
+// GET /search - Search products (Public)
+router.get('/search', async (req, res) => {
+    try {
+        const { q } = req.query;
+        if (!q || q.trim().length < 2) {
+            return res.status(400).json({ message: 'Search query must be at least 2 characters' });
+        }
+        const searchTerm = `%${q.trim().toLowerCase()}%`;
+        const result = await query(
+            `SELECT id, name, description, price, category, image, is_available, is_veg,
+                    is_bestseller, is_spicy, is_popular
+             FROM products
+             WHERE is_available = true
+               AND (LOWER(name) LIKE $1 OR LOWER(description) LIKE $1 OR LOWER(category) LIKE $1)
+             ORDER BY
+               CASE WHEN LOWER(name) LIKE $1 THEN 0 ELSE 1 END,
+               name
+             LIMIT 20`,
+            [searchTerm]
+        );
+        res.json(result.rows.map(dbRowToProduct));
+    } catch (err) {
+        console.error('Search error:', err);
+        res.status(500).json({ message: 'Search failed' });
+    }
+});
+
 // GET / - Get all products (Public)
 router.get('/', async (req, res) => {
     try {

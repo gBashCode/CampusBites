@@ -2,8 +2,10 @@ import React, { Suspense } from 'react'
 import SplashScreen from './components/SplashScreen'
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
 import { CartProvider } from './context/CartContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { WebSocketProvider } from './context/WebSocketContext'
 import { LoadingContainer } from './components/ui'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -100,6 +102,8 @@ function App() {
         <ErrorBoundary>
         <AuthProvider>
             <NotificationProvider>
+            <ThemeProvider>
+            <WebSocketProvider>
             <CartProvider>
                 <Router>
                     <ErrorBoundary>
@@ -164,6 +168,8 @@ function App() {
                     </ErrorBoundary>
                 </Router>
             </CartProvider>
+            </WebSocketProvider>
+            </ThemeProvider>
             </NotificationProvider>
         </AuthProvider>
         </ErrorBoundary>

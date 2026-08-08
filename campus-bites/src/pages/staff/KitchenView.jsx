@@ -4,6 +4,7 @@ import { LogOut, RefreshCw, Clock, ChefHat, CheckCircle2, Flame, Inbox, PackageC
 
 import API_URL from '../../apiConfig';
 import { StatusChip, PrimaryButton, SecondaryButton, LoadingContainer, EmptyState } from '../../components/ui';
+import { useWebSocket } from '../../context/WebSocketContext';
 
 const KitchenView = () => {
     const [orders, setOrders] = useState([]);
@@ -11,6 +12,7 @@ const KitchenView = () => {
     const [error, setError] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null);
     const { logout, user, token } = useAuth();
+    const { orderUpdates } = useWebSocket();
 
     const fetchOrders = async () => {
         if (!user?.id) {
@@ -40,6 +42,12 @@ const KitchenView = () => {
             return () => clearInterval(interval);
         }
     }, [user?.id]);
+
+    React.useEffect(() => {
+        if (orderUpdates.length > 0) {
+            fetchOrders();
+        }
+    }, [orderUpdates]);
 
     const updateStatus = async (orderId, newStatus) => {
         if (!user?.id) {

@@ -1,6 +1,7 @@
 import React, { useState, Component } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { UtensilsCrossed, BarChart3, LogOut, ShieldCheck, Menu, X, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { GlassCard } from '../../components/ui';
 
@@ -35,6 +36,7 @@ class ErrorBoundary extends Component {
 const AdminDashboard = () => {
     const { logout, user } = useAuth();
     const location = useLocation();
+    const { theme, toggleTheme } = useTheme();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const isActive = (path) => location.pathname.includes(path);
@@ -78,6 +80,23 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                            onClick={toggleTheme}
+                            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            style={{
+                                padding: '8px',
+                                borderRadius: '10px',
+                                background: 'var(--surface)',
+                                border: '1px solid var(--glass-border)',
+                                color: 'var(--text-main)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                        </button>
                         <button
                             onClick={logout}
                             title="Logout"
@@ -138,6 +157,23 @@ const AdminDashboard = () => {
                         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Campus Admin</h2>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                            onClick={toggleTheme}
+                            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            style={{
+                                background: 'var(--surface)',
+                                border: '1px solid var(--glass-border)',
+                                color: 'var(--text-main)',
+                                padding: '6px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                        </button>
                         <button
                             onClick={logout}
                             className="btn-icon"

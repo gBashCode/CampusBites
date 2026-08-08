@@ -212,11 +212,31 @@ const MENU_PAGE = {
 
 const NO_IMG = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231a1a1a' width='100' height='100'/><text fill='%23555' font-family='sans-serif' font-size='14' text-anchor='middle' x='50' y='55'>No Image</text></svg>";
 
+const OptimizedImage = ({ src, alt, className, style, ...rest }) => {
+  const [loaded, setLoaded] = React.useState(false);
+  if (!src) return <div className={className} style={{ ...style, background: 'var(--bg-card)' }} />;
+  return (
+    <img
+      src={`${src}?f=auto`}
+      srcSet={`${src}?w=300&f=auto 300w, ${src}?w=500&f=auto 500w, ${src}?w=800&f=auto 800w`}
+      sizes="(max-width: 380px) 280px, (max-width: 768px) 45vw, 300px"
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      style={{ ...style, opacity: loaded ? 1 : 0.8, transition: 'opacity 0.3s' }}
+      {...rest}
+    />
+  );
+};
+
 const Menu = () => {
   const [products, setProducts] = useState([]);
   const [category, setCategory] = useState('All');
   const [foodTypeFilter, setFoodTypeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -239,6 +259,25 @@ const Menu = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    setSearchLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/products/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch { }
+      setSearchLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleAddToCart = (product) => {
     addToCart(product);
     toast.success(`${product.name} added to cart`);
@@ -246,13 +285,24 @@ const Menu = () => {
 
   const filteredProducts = products.filter((p) => {
     const matchCategory = category === 'All' || p.category === category;
-    const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchType =
       foodTypeFilter === 'all' ||
       (foodTypeFilter === 'veg' && p.isVeg !== false) ||
       (foodTypeFilter === 'nonveg' && p.isVeg === false);
-    return matchCategory && matchSearch && matchType;
+    return matchCategory && matchType;
   });
+
+  const displayProducts = searchResults !== null
+    ? searchResults.filter((p) => {
+        const matchType =
+          foodTypeFilter === 'all' ||
+          (foodTypeFilter === 'veg' && p.isVeg !== false) ||
+          (foodTypeFilter === 'nonveg' && p.isVeg === false);
+        return matchType;
+      })
+    : filteredProducts;
+
+  const isSearching = searchQuery.trim().length >= 2;
 
   if (loading) return <LoadingContainer />;
 
@@ -299,7 +349,7 @@ const Menu = () => {
         </div>
 
         {/* ─── Categories ─── */}
-        <div style={MENU_PAGE.categoriesWrap}>
+        <div style={{ ...MENU_PAGE.categoriesWrap, opacity: isSearching ? 0.4 : 1, pointerEvents: isSearching ? 'none' : 'auto', transition: 'opacity 0.2s ease' }}>
           <div style={MENU_PAGE.categoriesScroll}>
             {CATEGORIES.map((cat) => {
               const active = category === cat.name;
@@ -348,17 +398,37 @@ const Menu = () => {
         {/* ─── Grid Header ─── */}
         <div style={MENU_PAGE.gridHeader}>
           <h2 style={MENU_PAGE.gridTitle}>
-            Menu <Filter size={18} color="var(--primary)" />
+            {isSearching ? (
+              <>Search Results <Search size={18} color="var(--primary)" /></>
+            ) : (
+              <>Menu <Filter size={18} color="var(--primary)" /></>
+            )}
           </h2>
-          <span style={MENU_PAGE.gridCount}>{filteredProducts.length} items</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+            {isSearching && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  background: 'var(--primary-surface)', color: 'var(--primary)',
+                  border: 'none', borderRadius: 'var(--radius-sm)', padding: '4px 10px',
+                  fontSize: 'var(--text-xs)', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Clear search
+              </button>
+            )}
+            <span style={MENU_PAGE.gridCount}>
+              {searchLoading ? '...' : `${displayProducts.length} items`}
+            </span>
+          </div>
         </div>
 
         {/* ─── Product Grid ─── */}
-        {filteredProducts.length === 0 ? (
-          <EmptyState icon={Search} title="No items found" description="Try a different search or filter." />
+        {displayProducts.length === 0 ? (
+          <EmptyState icon={Search} title={isSearching ? "No results found" : "No items found"} description={isSearching ? "Try a different search term." : "Try a different search or filter."} />
         ) : (
           <div className="product-grid">
-            {filteredProducts.map((product, idx) => (
+            {displayProducts.map((product, idx) => (
               <div
                 key={product.id}
                 className="glass-card"
@@ -380,7 +450,7 @@ const Menu = () => {
               >
                 {/* Image */}
                 <div style={MENU_PAGE.cardImgWrap}>
-                  <img
+                  <OptimizedImage
                     data-card-img
                     src={product.image}
                     alt={product.name}
