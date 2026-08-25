@@ -3,7 +3,7 @@ services:
     name: campus-bites-api
     runtime: node
     plan: free
-    rootDir: campus-bites/server
+    rootDir: backend
     buildCommand: npm install
     startCommand: node index.js
     healthCheckPath: /

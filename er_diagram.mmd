@@ -1,0 +1,59 @@
+erDiagram
+    User {
+        ObjectId _id PK
+        String name
+        String email
+        String password
+        String role "Enum: student, admin, staff, lecturer, delivery"
+        String cabinNumber
+        String department
+        String phone
+        Boolean isVerified
+        String otp
+        Date otpExpires
+        String resetPasswordOtp
+        Date resetPasswordExpires
+        Date createdAt
+        Date updatedAt
+    }
+
+    Product {
+        ObjectId _id PK
+        String name
+        String description
+        Number price
+        String category "Enum: Snacks, Meals, Beverages, Combos, Desserts"
+        String image
+        Boolean isAvailable
+        Boolean isVeg "From feature update"
+        Date createdAt
+        Date updatedAt
+    }
+
+    Order {
+        ObjectId _id PK
+        ObjectId user FK "Ref: User"
+        Number totalAmount
+        String status "Enum: pending, preparing, ready, completed, cancelled"
+        String paymentStatus "Enum: pending, paid, failed"
+        String orderType
+        String deliveryType "Enum: pickup, cabin"
+        String cabinNumber
+        String pickupTime
+        String razorpayOrderId
+        String razorpayPaymentId
+        String razorpaySignature
+        Date expiresAt
+        Date createdAt
+        Date updatedAt
+    }
+
+    OrderItem {
+        ObjectId product FK "Ref: Product"
+        Number quantity
+        Number price "Snapshot at ordering"
+    }
+
+    User ||--o{ Order : "places"
+    Order ||--|{ OrderItem : "contains"
+    Product ||--o{ OrderItem : "included in"

@@ -18,27 +18,27 @@ jobs:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: |
-            campus-bites/package-lock.json
-            campus-bites/server/package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
 
       - name: Install frontend dependencies
-        working-directory: campus-bites
+        working-directory: frontend
         run: npm ci
 
       - name: Install backend dependencies
-        working-directory: campus-bites/server
+        working-directory: backend
         run: npm ci
 
       - name: Run backend tests
-        working-directory: campus-bites/server
+        working-directory: backend
         run: npm test
 
       - name: Run frontend tests
-        working-directory: campus-bites
+        working-directory: frontend
         run: npm test
 
       - name: Build frontend
-        working-directory: campus-bites
+        working-directory: frontend
         run: npm run build
 
   deploy-frontend:
@@ -55,7 +55,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          working-directory: campus-bites
+          working-directory: frontend
 
   deploy-backend:
     needs: lint-and-test
